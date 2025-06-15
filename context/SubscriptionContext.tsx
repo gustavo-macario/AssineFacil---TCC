@@ -46,7 +46,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     // Em uma implementação real, isso viria do Supabase ou AsyncStorage.
     // Exemplo: const { data, error } = await supabase.from('user_categories').select('category_name').eq('user_id', session.user.id);
     // if (data) setCustomCategories(data.map(c => c.category_name));
-    console.log('Fetching custom categories (simulated)...');
+    console.log('Buscando categorias personalizadas (simulado)...');
     // Para teste, podemos adicionar algumas categorias personalizadas iniciais aqui se quisermos
     // setCustomCategories(['Trabalho', 'Estudos Pessoais']); 
   };
@@ -68,7 +68,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       if (error) throw error;
       setSubscriptions(data || []);
     } catch (error) {
-      console.error('Error fetching subscriptions:', error);
+      console.error('Erro ao buscar assinaturas:', error);
+      throw error;
     }
   };
 
@@ -93,7 +94,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       
       setSubscriptions(prev => [...prev, data]);
     } catch (error) {
-      console.error('Error adding subscription:', error);
+      console.error('Erro ao adicionar assinatura:', error);
       throw error;
     }
   };
@@ -113,7 +114,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         prev.map(sub => sub.id === id ? data : sub)
       );
     } catch (error) {
-      console.error('Error updating subscription:', error);
+      console.error('Erro ao atualizar assinatura:', error);
       throw error;
     }
   };
@@ -131,7 +132,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       
       await fetchSubscriptions();
     } catch (error) {
-      console.error('Error deleting subscription:', error);
+      console.error('Erro ao deletar assinatura:', error);
       throw error;
     }
   };
@@ -142,9 +143,9 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     if (!customCategories.includes(trimmedCategory) && !DEFAULT_CATEGORIES.includes(trimmedCategory)) {
       // Lógica para adicionar ao Supabase viria aqui
       setCustomCategories(prev => [...prev, trimmedCategory].sort());
-      console.log(`Custom category added (simulated): ${trimmedCategory}`);
+      console.log(`Categoria personalizada adicionada (simulado): ${trimmedCategory}`);
     } else {
-      console.log(`Category already exists: ${trimmedCategory}`);
+      console.log(`Categoria já existe: ${trimmedCategory}`);
       // Poderia lançar um erro ou retornar um status
     }
   };
@@ -156,7 +157,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     const subsToUpdate = subscriptions.filter(sub => sub.category === oldCategoryName);
     if (subsToUpdate.length === 0) return;
 
-    console.log(`Updating category from "${oldCategoryName}" to "${categoryToSet}" for ${subsToUpdate.length} subscriptions.`);
+    console.log(`Atualizando categoria de "${oldCategoryName}" para "${categoryToSet}" para ${subsToUpdate.length} assinaturas.`);
 
     // Atualiza localmente primeiro
     const updatedSubs = subscriptions.map(sub => 
@@ -175,32 +176,31 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           .eq('id', sub.id)
           .eq('user_id', session.user.id); // Segurança extra
         if (error) {
-          console.error(`Failed to update category for subscription ${sub.id}:`, error);
+          console.error(`Falha ao atualizar categoria para assinatura ${sub.id}:`, error);
           // Reverter alterações locais ou lidar com o erro
           // Por simplicidade, vamos recarregar as assinaturas para garantir consistência
           await fetchSubscriptions(); 
           throw new Error(`Failed to update category for subscription ${sub.id}`);
         }
       }
-      console.log(`Successfully updated category for ${subsToUpdate.length} subscriptions in Supabase.`);
+      console.log(`Categoria atualizada com sucesso para ${subsToUpdate.length} assinaturas no Supabase.`);
     } catch (error) {
-        console.error('Error during batch category update in Supabase:', error);
-        // Recarrega para garantir consistência após falha parcial
-        await fetchSubscriptions();
+      console.error('Erro durante atualização em lote de categorias no Supabase:', error);
+      throw error;
     }
   };
 
   const deleteCustomCategory = async (categoryName: string) => {
     if (!session || !categoryName.trim()) return;
     if (DEFAULT_CATEGORIES.includes(categoryName)) {
-      console.log('Cannot delete a default category.');
+      console.log('Não é possível deletar uma categoria padrão.');
       // Poderia lançar um erro ou retornar um status
       return;
     }
 
     // Lógica para remover do Supabase viria aqui
     setCustomCategories(prev => prev.filter(cat => cat !== categoryName));
-    console.log(`Custom category deleted (simulated): ${categoryName}`);
+    console.log(`Categoria personalizada deletada (simulado): ${categoryName}`);
 
     // Atualiza as assinaturas que usavam esta categoria para 'Outro' (ou null/padrão)
     await updateSubscriptionsCategory(categoryName, 'Outro'); 

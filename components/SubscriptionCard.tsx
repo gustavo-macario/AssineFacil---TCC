@@ -17,22 +17,22 @@ export default function SubscriptionCard({ subscription, onPress, currencySymbol
   const [imageError, setImageError] = useState(false);
 
   const getNextBillingDate = (): Date => {
-    const billingDate = new Date(subscription.billing_date);
+    const billingDate = new Date(subscription.billing_date + 'T00:00:00');
     const today = new Date();
     
-    // If the billing date has passed, calculate the next one
+    // Se a data de cobrança já passou, calcula a próxima
     if (billingDate < today) {
       switch (subscription.renewal_period.toLowerCase()) {
         case 'diário':
-          return addDays(today, 1);
+          return addDays(billingDate, 1);
         case 'semanal':
-          return addWeeks(billingDate, Math.ceil((today.getTime() - billingDate.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1);
+          return addWeeks(billingDate, 1);
         case 'mensal':
-          return addMonths(billingDate, Math.ceil((today.getTime() - billingDate.getTime()) / (30 * 24 * 60 * 60 * 1000)) + 1);
+          return addMonths(billingDate, 1);
         case 'trimestral':
-          return addMonths(billingDate, Math.ceil((today.getTime() - billingDate.getTime()) / (90 * 24 * 60 * 60 * 1000)) * 3 + 3);
+          return addMonths(billingDate, 3);
         case 'anual':
-          return addYears(billingDate, Math.ceil((today.getTime() - billingDate.getTime()) / (365 * 24 * 60 * 60 * 1000)) + 1);
+          return addYears(billingDate, 1);
         default:
           return addMonths(billingDate, 1);
       }
@@ -78,18 +78,9 @@ export default function SubscriptionCard({ subscription, onPress, currencySymbol
           { backgroundColor: subscription.color || colors.primary }
         ]}
       >
-        {subscription.logo_url && !imageError ? (
-          <Image 
-            source={{ uri: subscription.logo_url }} 
-            style={styles.logo} 
-            resizeMode="contain"
-            onError={() => setImageError(true)}
-          />
-        ) : (
-          <Text style={styles.iconText}>
-            {subscription.name.charAt(0).toUpperCase()}
-          </Text>
-        )}
+        <Text style={styles.iconText}>
+          {subscription.name.charAt(0).toUpperCase()}
+        </Text>
       </View>
       
       <View style={styles.contentContainer}>
@@ -118,20 +109,13 @@ export default function SubscriptionCard({ subscription, onPress, currencySymbol
               <View style={styles.paymentMethodContainer}>
                 {
                   [
-                    'PIX',
-                    'Pix',
                     'pix',
-                    'Boleto',
                     'boleto',
-                    'PayPal',
                     'paypal',
-                    'Apple Pay / Google Pay',
                     'apple pay / google pay',
-                    'Apple Pay',
-                    'Google Pay',
                     'apple pay',
                     'google pay'
-                  ].includes(subscription.payment_method.trim()) ? (
+                  ].includes(subscription.payment_method.toLowerCase().trim()) ? (
                     <DollarSign size={14} color={colors.textSecondary} style={styles.paymentMethodIcon} />
                   ) : (
                     <CreditCard size={14} color={colors.textSecondary} style={styles.paymentMethodIcon} />

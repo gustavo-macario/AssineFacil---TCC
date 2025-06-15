@@ -39,20 +39,20 @@ export default function AdminScreen() {
             .single();
 
           if (profileError) {
-            console.error('Error checking admin access on focus:', profileError);
+            console.error('Erro ao verificar acesso de admin:', profileError);
             router.replace('/');
             return;
           }
 
           if (profileData?.role !== 'admin') {
-            console.log('User is not admin on focus, redirecting...');
+            console.log('Usuário não é admin, redirecionando...');
             router.replace('/');
             return;
           }
 
           await fetchAdminStats();
         } catch (error) {
-          console.error('Error in useFocusEffect admin check:', error);
+          console.error('Erro ao verificar acesso de admin:', error);
           Alert.alert('Erro', 'Ocorreu um erro ao verificar o acesso.');
           router.replace('/');
         }
@@ -88,12 +88,17 @@ export default function AdminScreen() {
 
       if (subscriptionsError) throw subscriptionsError;
 
+      const { data: userSettings, error: settingsError } = await supabase
+        .from('user_settings')
+        .select('id, currency');
+
+      if (settingsError) throw settingsError;
+
       // Filtra apenas as assinaturas ativas
       const activeSubscriptions = subscriptions.filter(sub => sub.active);
 
       const totalUsers = users.length;
       const totalSubscriptions = activeSubscriptions.length;
-      const totalRevenue = activeSubscriptions.reduce((acc, sub) => acc + (sub.amount || 0), 0);
 
       const subscriptionsByCategory = activeSubscriptions.reduce((acc: any, sub) => {
         const category = sub.category || 'Sem categoria';
@@ -118,24 +123,27 @@ export default function AdminScreen() {
 
       const subscriptionsByUser = users.map(user => {
         const userSubscriptions = activeSubscriptions.filter(sub => sub.user_id === user.id);
+        const userSetting = userSettings?.find(setting => setting.id === user.id);
+        const currency = userSetting?.currency || 'BRL';
+        
         return {
           id: user.id,
           name: user.full_name || user.email,
           email: user.email,
           totalSubscriptions: userSubscriptions.length,
-          totalSpent: userSubscriptions.reduce((sum, sub) => sum + (sub.amount || 0), 0)
+          totalSpent: userSubscriptions.reduce((sum, sub) => sum + (sub.amount || 0), 0),
+          currency
         };
       });
 
       setStats({
         totalUsers,
         totalSubscriptions,
-        totalRevenue,
         subscriptionsByCategory: categoryData,
         subscriptionsByUser
       });
     } catch (error) {
-      console.error('Error fetching admin stats:', error);
+      console.error('Erro ao buscar estatísticas de admin:', error);
       Alert.alert('Erro', 'Não foi possível carregar as estatísticas.');
     } finally {
       setIsLoading(false);
@@ -190,13 +198,6 @@ export default function AdminScreen() {
             <Text style={[styles.statValue, { color: colors.primary }]}>{stats?.totalSubscriptions}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total de Assinaturas</Text>
           </View>
-
-          <View style={[styles.statCard, { backgroundColor: colors.background }]}>
-            <Text style={[styles.statValue, { color: colors.primary }]}>
-              R$ {stats?.totalRevenue.toFixed(2)}
-            </Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Receita Total</Text>
-          </View>
         </View>
       </View>
 
@@ -248,7 +249,7 @@ export default function AdminScreen() {
                   {user.totalSubscriptions} assinaturas
                 </Text>
                 <Text style={[styles.userStat, { color: colors.primary }]}>
-                  R$ {user.totalSpent.toFixed(2)}
+                  {user.currency} {user.totalSpent.toFixed(2)}
                 </Text>
               </View>
             </View>

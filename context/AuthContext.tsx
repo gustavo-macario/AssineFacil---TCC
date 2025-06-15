@@ -52,8 +52,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       return { error };
     } catch (error) {
-      console.error('Error signing up:', error);
-      return { error };
+      console.error('Erro ao criar conta:', error);
+      throw error;
     }
   };
 
@@ -65,8 +65,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       return { error };
     } catch (error) {
-      console.error('Error signing in:', error);
-      return { error };
+      console.error('Erro ao fazer login:', error);
+      throw error;
     }
   };
 
@@ -74,7 +74,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await supabase.auth.signOut();
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('Erro ao fazer logout:', error);
+      throw error;
     }
   };
 
@@ -86,8 +87,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', user?.id);
       return { error };
     } catch (error) {
-      console.error('Error updating profile:', error);
-      return { error };
+      console.error('Erro ao atualizar perfil:', error);
+      throw error;
     }
   };
 
@@ -96,8 +97,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.updateUser({ email });
       return { error };
     } catch (error) {
-      console.error('Error updating email:', error);
-      return { error };
+      console.error('Erro ao atualizar email:', error);
+      throw error;
     }
   };
 
@@ -106,8 +107,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.updateUser({ password });
       return { error };
     } catch (error) {
-      console.error('Error updating password:', error);
-      return { error };
+      console.error('Erro ao atualizar senha:', error);
+      throw error;
     }
   };
 

@@ -10,6 +10,8 @@ import RenewalPeriodPicker from '@/components/RenewalPeriodPicker';
 import CategoryPicker from '@/components/CategoryPicker';
 import ColorPicker from '@/components/ColorPicker';
 import PaymentMethodPicker from '@/components/PaymentMethodPicker';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 export default function AddSubscriptionScreen() {
   const { session } = useAuth();
@@ -21,7 +23,7 @@ export default function AddSubscriptionScreen() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
-  const [billingDate, setBillingDate] = useState(new Date());
+  const [billingDate, setBillingDate] = useState(new Date(new Date().toISOString().split('T')[0] + 'T00:00:00'));
   const [renewalPeriod, setRenewalPeriod] = useState('');
   const [category, setCategory] = useState('');
   const [color, setColor] = useState('#3b82f6');
@@ -34,7 +36,7 @@ export default function AddSubscriptionScreen() {
     setName('');
     setDescription('');
     setAmount('');
-    setBillingDate(new Date());
+    setBillingDate(new Date(new Date().toISOString().split('T')[0] + 'T00:00:00'));
     setRenewalPeriod('');
     setCategory('');
     setColor('#3b82f6');
@@ -93,7 +95,7 @@ export default function AddSubscriptionScreen() {
         name,
         description,
         amount: numericAmount,
-        billing_date: billingDate.toISOString().split('T')[0],
+        billing_date: format(new Date(billingDate.getTime() + billingDate.getTimezoneOffset() * 60000), 'yyyy-MM-dd'),
         renewal_period: renewalPeriod,
         category,
         color,
@@ -201,7 +203,8 @@ export default function AddSubscriptionScreen() {
             onPress={() => setShowDatePicker(true)}
           >
             <Text style={[styles.dateText, { color: colors.text }]}>
-              {billingDate.toLocaleDateString()}
+            {format(billingDate, 'dd/MM/yyyy', { locale: ptBR })}
+
             </Text>
             <Calendar size={20} color={colors.primary} />
           </TouchableOpacity>

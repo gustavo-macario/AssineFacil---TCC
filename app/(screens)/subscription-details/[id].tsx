@@ -8,7 +8,6 @@ import { ArrowLeft, Pencil, Trash2, Calendar, Clock, Tag, RefreshCw, CreditCard 
 import { format, addDays, addWeeks, addMonths, addQuarters, addYears } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Subscription } from '@/types';
-import { supabase } from '@/lib/supabase';
 
 export default function SubscriptionDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -26,46 +25,45 @@ export default function SubscriptionDetailsScreen() {
       const foundSubscription = subscriptions.find(sub => sub.id === id);
       if (foundSubscription) {
         setSubscription(foundSubscription);
-        calculateNextBillingDates(foundSubscription);
+        setNextBillingDates(calculateNextBillingDates(foundSubscription));
       } else {
-        // Alert.alert('Erro', 'Assinatura não encontrada');
         router.push('/(screens)');
       }
       setIsLoading(false);
     }
   }, [id, subscriptions]);
 
-  const calculateNextBillingDates = (sub: Subscription) => {
-    const currentDate = new Date(sub.billing_date);
+  const calculateNextBillingDates = (sub: Subscription): Date[] => {
+    let lastDate = new Date(sub.billing_date + 'T00:00:00');
     const dates: Date[] = [];
 
-    for (let i = 0; i < 3; i++) {
-      let nextDate;
+    const period = sub.renewal_period.trim().toLowerCase();
 
-      switch (sub.renewal_period.toLowerCase()) {
+    for (let i = 0; i < 3; i++) {
+      switch (period) {
         case 'diário':
-          nextDate = addDays(currentDate, i + 1);
+          lastDate = addDays(lastDate, 1);
           break;
         case 'semanal':
-          nextDate = addWeeks(currentDate, i + 1);
+          lastDate = addWeeks(lastDate, 1);
           break;
         case 'mensal':
-          nextDate = addMonths(currentDate, i + 1);
+          lastDate = addMonths(lastDate, 1);
           break;
         case 'trimestral':
-          nextDate = addQuarters(currentDate, i + 1);
+          lastDate = addQuarters(lastDate, 1);
           break;
         case 'anual':
-          nextDate = addYears(currentDate, i + 1);
+          lastDate = addYears(lastDate, 1);
           break;
         default:
-          nextDate = addMonths(currentDate, i + 1);
+          console.warn(`Período de renovação desconhecido: "${sub.renewal_period}", assumindo "mensal".`);
+          lastDate = addMonths(lastDate, 1);
       }
-
-      dates.push(nextDate);
+      dates.push(lastDate);
     }
 
-    setNextBillingDates(dates);
+    return dates;
   };
 
   const handleEdit = () => {
@@ -122,20 +120,12 @@ export default function SubscriptionDetailsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.card }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <ArrowLeft size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
-          Detalhes da Assinatura
-        </Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Detalhes da Assinatura</Text>
         <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={handleEdit}
-          >
+          <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
             <Pencil size={20} color={colors.primary} />
           </TouchableOpacity>
         </View>
@@ -143,25 +133,9 @@ export default function SubscriptionDetailsScreen() {
 
       <ScrollView style={styles.scrollView}>
         <View style={styles.content}>
-          <View
-            style={[
-              styles.subscriptionHeader,
-              { backgroundColor: subscription.color || colors.primary }
-            ]}
-          >
+          <View style={[styles.subscriptionHeader, { backgroundColor: subscription.color || colors.primary }]}>
             <View style={styles.logoContainer}>
-              {subscription.logo_url && !imageError ? (
-                <Image
-                  source={{ uri: subscription.logo_url }}
-                  style={styles.logo}
-                  resizeMode="contain"
-                  onError={() => setImageError(true)}
-                />
-              ) : (
-                <Text style={styles.logoText}>
-                  {subscription.name.charAt(0).toUpperCase()}
-                </Text>
-              )}
+              <Text style={styles.logoText}>{subscription.name.charAt(0).toUpperCase()}</Text>
             </View>
             <Text style={styles.subscriptionName}>{subscription.name}</Text>
             <Text style={styles.subscriptionAmount}>
@@ -175,9 +149,7 @@ export default function SubscriptionDetailsScreen() {
           {subscription.description && (
             <View style={[styles.detailCard, { backgroundColor: colors.card }]}>
               <Text style={[styles.detailTitle, { color: colors.text }]}>Descrição</Text>
-              <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
-                {subscription.description}
-              </Text>
+              <Text style={[styles.detailValue, { color: colors.textSecondary }]}>{subscription.description}</Text>
             </View>
           )}
 
@@ -189,7 +161,7 @@ export default function SubscriptionDetailsScreen() {
               <View style={styles.detailTextContainer}>
                 <Text style={[styles.detailTitle, { color: colors.text }]}>Data de Faturamento</Text>
                 <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
-                  {format(new Date(subscription.billing_date), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  {format(new Date(subscription.billing_date + 'T00:00:00'), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
                 </Text>
               </View>
             </View>
@@ -217,9 +189,7 @@ export default function SubscriptionDetailsScreen() {
                 </View>
                 <View style={styles.detailTextContainer}>
                   <Text style={[styles.detailTitle, { color: colors.text }]}>Categoria</Text>
-                  <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
-                    {subscription.category}
-                  </Text>
+                  <Text style={[styles.detailValue, { color: colors.textSecondary }]}>{subscription.category}</Text>
                 </View>
               </View>
             </View>
@@ -232,7 +202,7 @@ export default function SubscriptionDetailsScreen() {
               </View>
               <View style={styles.detailTextContainer}>
                 <Text style={[styles.detailTitle, { color: colors.text }]}>Método de Pagamento</Text>
-                <Text style={[styles.detailValue, { color: colors.textSecondary }]}> 
+                <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
                   {subscription.payment_method || 'Não informado'}
                 </Text>
               </View>
@@ -269,6 +239,7 @@ export default function SubscriptionDetailsScreen() {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -327,10 +298,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
-  },
-  logo: {
-    width: 40,
-    height: 40,
   },
   logoText: {
     fontFamily: 'Inter-Bold',

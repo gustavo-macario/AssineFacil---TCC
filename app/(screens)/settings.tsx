@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { User, Bell, Moon, Sun, LogOut, CreditCard, DollarSign, Lock, Mail, ChevronRight, CircleAlert as AlertCircle, Settings } from 'lucide-react-native';
 import CurrencyPicker from '@/components/CurrencyPicker';
 import { useCurrency } from '@/context/CurrencyContext';
+import { registerForPushNotificationsAsync, updatePushToken } from '@/lib/notifications';
 
 export default function SettingsScreen() {
   const { session, signOut } = useAuth();
@@ -112,6 +113,13 @@ export default function SettingsScreen() {
   const toggleNotifications = async (value: boolean) => {
     try {
       setNotificationsEnabled(value);
+      
+      if (value) {
+        const token = await registerForPushNotificationsAsync();
+        if (token && session?.user.id) {
+          await updatePushToken(session.user.id, token);
+        }
+      }
       
       const { error } = await supabase
         .from('user_settings')
@@ -302,24 +310,9 @@ export default function SettingsScreen() {
       {/* About Section */}
       <Text style={[styles.sectionTitle, { color: colors.text }]}>Sobre</Text>
       <View style={[styles.section, { backgroundColor: colors.card }]}>
-        <TouchableOpacity 
-          style={styles.settingRow}
-          onPress={() => router.push('/(screens)/about')}
-        >
-          <View style={styles.settingIconContainer}>
-            <AlertCircle size={20} color={colors.primary} />
-          </View>
-          <View style={styles.settingTextContainer}>
-            <Text style={[styles.settingTitle, { color: colors.text }]}>Sobre o AssineFacil</Text>
-          </View>
-          <ChevronRight size={20} color={colors.textTertiary} />
-        </TouchableOpacity>
-        
-        <View style={styles.divider} />
-        
         <View style={styles.settingRow}>
           <View style={styles.settingIconContainer}>
-            <CreditCard size={20} color={colors.primary} />
+            <AlertCircle size={20} color={colors.primary} />
           </View>
           <View style={styles.settingTextContainer}>
             <Text style={[styles.settingTitle, { color: colors.text }]}>Versão</Text>

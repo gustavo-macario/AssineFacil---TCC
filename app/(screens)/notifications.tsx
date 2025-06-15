@@ -6,7 +6,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useCurrency } from '@/context/CurrencyContext';
 import { supabase } from '@/lib/supabase';
 import { Bell, Check, Calendar, CircleAlert as AlertCircle, X } from 'lucide-react-native';
-import { format } from 'date-fns';
+import { format, addDays, addWeeks, addMonths, addYears } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Subscription, Notification } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -88,6 +88,31 @@ export default function NotificationsScreen() {
     };
   }, [session?.user.id, notificationsEnabled]);
 
+  const getNextBillingDate = (sub: Subscription): Date => {
+    const billingDate = new Date(sub.billing_date);
+    const today = new Date();
+    
+    // Se a data de cobrança já passou, calcula a próxima
+    if (billingDate < today) {
+      switch (sub.renewal_period.toLowerCase()) {
+        case 'diário':
+          return addDays(billingDate, 1);
+        case 'semanal':
+          return addWeeks(billingDate, 1);
+        case 'mensal':
+          return addMonths(billingDate, 1);
+        case 'trimestral':
+          return addMonths(billingDate, 3);
+        case 'anual':
+          return addYears(billingDate, 1);
+        default:
+          return addMonths(billingDate, 1);
+      }
+    }
+    
+    return billingDate;
+  };
+
   const generateUpcomingReminders = async (subs: Subscription[], days: number) => {
     try {
       console.log('[DEBUG] Iniciando geração de lembretes');
@@ -112,9 +137,9 @@ export default function NotificationsScreen() {
       const newNotifications = [];
 
       for (const sub of subs) {
-        const billingDate = new Date(sub.billing_date);
-        billingDate.setHours(0, 0, 0, 0);
-        const daysUntilBilling = Math.ceil((billingDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        const nextBillingDate = getNextBillingDate(sub);
+        nextBillingDate.setHours(0, 0, 0, 0);
+        const daysUntilBilling = Math.ceil((nextBillingDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
         if (daysUntilBilling === 0) {
           const key = `${sub.id}_Renovação Hoje_${today.toISOString().split('T')[0]}`;
@@ -181,7 +206,7 @@ export default function NotificationsScreen() {
         )
       );
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error('Erro ao marcar notificação como lida:', error);
     }
   };
 
@@ -196,7 +221,7 @@ export default function NotificationsScreen() {
         prev.map(notification => ({ ...notification, is_read: true }))
       );
     } catch (error) {
-      console.error('Error clearing notifications:', error);
+      console.error('Erro ao limpar notificações:', error);
     }
   };
 
@@ -215,7 +240,7 @@ export default function NotificationsScreen() {
         await generateUpcomingReminders(subscriptions, reminderDays);
       }
     } catch (error) {
-      console.error('Error updating notification settings:', error);
+      console.error('Erro ao atualizar configurações de notificação:', error);
       setNotificationsEnabled(!value);
       Alert.alert('Erro', 'Não foi possível atualizar as configurações de notificação.');
     }
@@ -232,7 +257,7 @@ export default function NotificationsScreen() {
 
       setNotifications(prev => prev.filter(notification => notification.id !== id));
     } catch (error) {
-      console.error('Error deleting notification:', error);
+      console.error('Erro ao deletar notificação:', error);
       Alert.alert('Erro', 'Não foi possível excluir a notificação.');
     }
   };

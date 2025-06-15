@@ -7,6 +7,7 @@ import { Search, Filter, Plus } from 'lucide-react-native';
 import SubscriptionCard from '@/components/SubscriptionCard';
 import { Subscription } from '@/types';
 import { useCurrency } from '@/context/CurrencyContext';
+import { addDays, addWeeks, addMonths, addYears } from 'date-fns';
 
 export default function SubscriptionsScreen() {
   const { colors } = useTheme();
@@ -18,13 +19,44 @@ export default function SubscriptionsScreen() {
   const [filterVisible, setFilterVisible] = useState(false);
   const [currentFilter, setCurrentFilter] = useState('all');
 
+  const getNextBillingDate = (sub: Subscription): Date => {
+    const billingDate = new Date(sub.billing_date);
+    const today = new Date();
+    
+    // Se a data de cobrança já passou, calcula a próxima
+    if (billingDate < today) {
+      switch (sub.renewal_period.toLowerCase()) {
+        case 'diário':
+          return addDays(billingDate, 1);
+        case 'semanal':
+          return addWeeks(billingDate, 1);
+        case 'mensal':
+          return addMonths(billingDate, 1);
+        case 'trimestral':
+          return addMonths(billingDate, 3);
+        case 'anual':
+          return addYears(billingDate, 1);
+        default:
+          return addMonths(billingDate, 1);
+      }
+    }
+    
+    return billingDate;
+  };
+
   useEffect(() => {
     if (searchQuery) {
-      const filtered = subscriptions.filter(sub => 
-        sub.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        sub.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        sub.category?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      const filtered = subscriptions
+        .map(sub => ({
+          ...sub,
+          nextBillingDate: getNextBillingDate(sub)
+        }))
+        .filter(sub => 
+          sub.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          sub.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          sub.category?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .sort((a, b) => a.nextBillingDate.getTime() - b.nextBillingDate.getTime());
       setFilteredSubscriptions(filtered);
     } else {
       applyFilter(currentFilter);
@@ -33,30 +65,38 @@ export default function SubscriptionsScreen() {
 
   const applyFilter = (filter: string) => {
     setCurrentFilter(filter);
-    let filtered = [...subscriptions];
+    let filtered = subscriptions.map(sub => ({
+      ...sub,
+      nextBillingDate: getNextBillingDate(sub)
+    }));
     
     switch (filter) {
       case 'ativo':
-        filtered = subscriptions.filter(sub => sub.active);
+        filtered = filtered.filter(sub => sub.active);
         break;
       case 'inativo':
-        filtered = subscriptions.filter(sub => !sub.active);
-        break;
-      case 'mensal':
-        filtered = subscriptions.filter(sub => sub.renewal_period.toLowerCase() === 'mensal');
-        break;
-      case 'anual':
-        filtered = subscriptions.filter(sub => sub.renewal_period.toLowerCase() === 'anual');
+        filtered = filtered.filter(sub => !sub.active);
         break;
       case 'maiorParaMenor':
-        filtered = [...subscriptions].sort((a, b) => Number(b.amount) - Number(a.amount));
+        filtered = filtered.sort((a, b) => Number(b.amount) - Number(a.amount));
         break;
       case 'menorParaMaior':
-        filtered = [...subscriptions].sort((a, b) => Number(a.amount) - Number(b.amount));
+        filtered = filtered.sort((a, b) => Number(a.amount) - Number(b.amount));
+        break;
+      case 'aZ':
+        filtered = filtered.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case 'zA':
+        filtered = filtered.sort((a, b) => b.name.localeCompare(a.name));
         break;
       default:
         // Default is all
         break;
+    }
+    
+    // Sempre ordena por data da próxima cobrança, exceto quando ordenado por preço ou alfabeticamente
+    if (filter !== 'maiorParaMenor' && filter !== 'menorParaMaior' && filter !== 'aZ' && filter !== 'zA') {
+      filtered = filtered.sort((a, b) => a.nextBillingDate.getTime() - b.nextBillingDate.getTime());
     }
     
     setFilteredSubscriptions(filtered);
@@ -82,16 +122,6 @@ export default function SubscriptionsScreen() {
           onPress={() => applyFilter('inativo')} 
         />
         <FilterButton 
-          label="Mensais" 
-          isActive={currentFilter === 'mensal'} 
-          onPress={() => applyFilter('mensal')} 
-        />
-        <FilterButton 
-          label="Anuais" 
-          isActive={currentFilter === 'anual'} 
-          onPress={() => applyFilter('anual')} 
-        />
-        <FilterButton 
           label="Preço: Maior para Menor" 
           isActive={currentFilter === 'maiorParaMenor'} 
           onPress={() => applyFilter('maiorParaMenor')} 
@@ -100,6 +130,16 @@ export default function SubscriptionsScreen() {
           label="Preço: Menor para Maior" 
           isActive={currentFilter === 'menorParaMaior'} 
           onPress={() => applyFilter('menorParaMaior')} 
+        />
+        <FilterButton 
+          label="Nome: A-Z" 
+          isActive={currentFilter === 'aZ'} 
+          onPress={() => applyFilter('aZ')} 
+        />
+        <FilterButton 
+          label="Nome: Z-A" 
+          isActive={currentFilter === 'zA'} 
+          onPress={() => applyFilter('zA')} 
         />
       </ScrollView>
     </View>

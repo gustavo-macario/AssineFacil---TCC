@@ -12,6 +12,8 @@ import CategoryPicker from '@/components/CategoryPicker';
 import ColorPicker from '@/components/ColorPicker';
 import PaymentMethodPicker from '@/components/PaymentMethodPicker';
 import { Subscription } from '@/types';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 export default function EditSubscriptionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -55,7 +57,7 @@ export default function EditSubscriptionScreen() {
         setName(data.name);
         setDescription(data.description || '');
         setAmount(data.amount.toString());
-        setBillingDate(new Date(data.billing_date));
+        setBillingDate(new Date(data.billing_date + 'T00:00:00'));
         setRenewalPeriod(data.renewal_period);
         setCategory(data.category || '');
         setColor(data.color || '#3b82f6');
@@ -63,7 +65,7 @@ export default function EditSubscriptionScreen() {
         setPaymentMethod(data.payment_method || '');
       }
     } catch (error) {
-      console.error('Error fetching subscription:', error);
+      console.error('Erro ao buscar assinatura:', error);
       Alert.alert('Erro', 'Falha ao carregar os detalhes da assinatura');
     } finally {
       setIsLoading(false);
@@ -104,7 +106,7 @@ export default function EditSubscriptionScreen() {
         name,
         description,
         amount: numericAmount,
-        billing_date: billingDate.toISOString().split('T')[0],
+        billing_date: format(billingDate, 'yyyy-MM-dd'),
         renewal_period: renewalPeriod,
         category,
         color,
@@ -228,7 +230,7 @@ export default function EditSubscriptionScreen() {
             onPress={() => setShowDatePicker(true)}
           >
             <Text style={[styles.dateText, { color: colors.text }]}>
-              {billingDate.toLocaleDateString()}
+              {format(new Date(billingDate.getTime() + billingDate.getTimezoneOffset() * 60000), 'dd/MM/yyyy', { locale: ptBR })}
             </Text>
             <Calendar size={20} color={colors.primary} />
           </TouchableOpacity>

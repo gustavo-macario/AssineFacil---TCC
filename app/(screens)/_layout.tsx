@@ -30,7 +30,7 @@ export default function AppLayout() {
       if (error) throw error;
       setIsAdmin(data?.role === 'admin');
     } catch (error) {
-      console.error('Error checking admin status:', error);
+      console.error('Erro ao verificar status de admin:', error);
     }
   };
 

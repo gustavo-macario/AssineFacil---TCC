@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useSubscriptions } from '@/context/SubscriptionContext';
 import { useCurrency } from '@/context/CurrencyContext';
 import { useExpenses } from '@/context/ExpensesContext';
-import { format, addDays, isWithinInterval, startOfMonth, endOfMonth, isSameMonth, getDaysInMonth, isLeapYear } from 'date-fns';
+import { format, addDays, isWithinInterval, startOfMonth, endOfMonth, isSameMonth, getDaysInMonth, isLeapYear, addMonths, addWeeks, addYears } from 'date-fns';
 import { CreditCard, TrendingUp, Calendar, Plus } from 'lucide-react-native';
 import SubscriptionCard from '@/components/SubscriptionCard';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -22,15 +22,16 @@ export default function HomeScreen() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [upcomingBillings, setUpcomingBillings] = useState<Subscription[]>([]);
 
   const fetchData = async () => {
     if (!session) return;
 
     try {
-      findUpcomingBillings(subscriptions);
+      // Não é mais necessário processar as próximas cobranças
+      setIsLoading(false);
+      setRefreshing(false);
     } catch (error) {
-      console.error('Error processing subscriptions:', error);
+      console.error('Erro ao processar assinaturas:', error);
     } finally {
       setIsLoading(false);
       setRefreshing(false);
@@ -60,6 +61,31 @@ export default function HomeScreen() {
       default:
         return norm;
     }
+  };
+
+  const getNextBillingDate = (sub: Subscription): Date => {
+    const billingDate = new Date(sub.billing_date + 'T00:00:00');
+    const today = new Date();
+    
+    // Se a data de cobrança já passou, calcula a próxima
+    if (billingDate < today) {
+      switch (sub.renewal_period.toLowerCase()) {
+        case 'diário':
+          return addDays(billingDate, 1);
+        case 'semanal':
+          return addWeeks(billingDate, 1);
+        case 'mensal':
+          return addMonths(billingDate, 1);
+        case 'trimestral':
+          return addMonths(billingDate, 3);
+        case 'anual':
+          return addYears(billingDate, 1);
+        default:
+          return addMonths(billingDate, 1);
+      }
+    }
+    
+    return billingDate;
   };
 
   const getTotalByFrequency = (freqKey: string) => {
@@ -122,29 +148,6 @@ export default function HomeScreen() {
     }, 0);
   };
 
-  const calculateCosts = (subs: Subscription[]) => {
-    // This method is no longer used in the new implementation
-  };
-
-  const findUpcomingBillings = (subs: Subscription[]) => {
-    const today = new Date();
-    const nextWeek = addDays(today, 7);
-    
-    const upcoming = subs
-      .filter(sub => sub.active)
-      .filter(sub => {
-        const billingDate = new Date(sub.billing_date);
-        return isWithinInterval(billingDate, { start: today, end: nextWeek });
-      })
-      .sort((a, b) => {
-        const dateA = new Date(a.billing_date);
-        const dateB = new Date(b.billing_date);
-        return dateA.getTime() - dateB.getTime();
-      });
-    
-    setUpcomingBillings(upcoming);
-  };
-
   const onRefresh = () => {
     setRefreshing(true);
     fetchData();
@@ -162,11 +165,18 @@ export default function HomeScreen() {
     );
   }
 
-  const currentMonthSubs = subscriptions.filter(sub => {
-    const billingDate = new Date(sub.billing_date);
-    const today = new Date();
-    return isSameMonth(billingDate, today);
-  });
+  const nextMonthSubs = subscriptions
+    .filter(sub => sub.active)
+    .map(sub => ({
+      ...sub,
+      nextBillingDate: getNextBillingDate(sub)
+    }))
+    .filter(sub => {
+      const today = new Date();
+      const nextMonth = addMonths(today, 1);
+      return sub.nextBillingDate <= nextMonth;
+    })
+    .sort((a, b) => a.nextBillingDate.getTime() - b.nextBillingDate.getTime());
 
   return (
     <ScrollView 
@@ -227,47 +237,19 @@ export default function HomeScreen() {
           onPress={() => router.push('/(screens)/analytics')}
         >
           <TrendingUp size={24} color="#14b8a6" />
-          <Text style={[styles.quickActionText, { color: colors.text }]}>Relatórios</Text>
+          <Text style={[styles.quickActionText, { color: colors.text }]}>Análises</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Upcoming Billings */}
-      <View style={styles.sectionContainer}>
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Próximas Cobranças</Text>
-          <Calendar size={20} color={colors.primary} />
-        </View>
-        
-        {upcomingBillings.length > 0 ? (
-          upcomingBillings.map((subscription) => (
-            <SubscriptionCard 
-              key={subscription.id} 
-              subscription={subscription}
-              onPress={() => router.push({
-                pathname: '/(screens)/subscription-details/[id]',
-                params: { id: subscription.id }
-              })}
-              currencySymbol={currencySymbol}
-            />
-          ))
-        ) : (
-          <View style={[styles.emptyState, { backgroundColor: colors.card }]}>
-            <Text style={[styles.emptyStateText, { color: colors.textSecondary }]}>
-              Nenhuma cobrança prevista nos próximos 7 dias
-            </Text>
-          </View>
-        )}
-      </View>
-
-      {/* This Month's Subscriptions */}
+      {/* Próximos 30 Dias */}
       <View style={styles.sectionContainer}>
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Próximos 30 Dias</Text>
           <CreditCard size={20} color={colors.primary} />
         </View>
         
-        {currentMonthSubs.length > 0 ? (
-          currentMonthSubs.map((subscription) => (
+        {nextMonthSubs.length > 0 ? (
+          nextMonthSubs.map((subscription) => (
             <SubscriptionCard 
               key={subscription.id} 
               subscription={subscription}
@@ -281,7 +263,7 @@ export default function HomeScreen() {
         ) : (
           <View style={[styles.emptyState, { backgroundColor: colors.card }]}>
             <Text style={[styles.emptyStateText, { color: colors.textSecondary }]}>
-              Nenhuma assinatura com cobrança neste mês
+              Nenhuma assinatura com cobrança nos próximos 30 dias
             </Text>
           </View>
         )}
