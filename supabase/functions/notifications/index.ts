@@ -51,26 +51,31 @@ const getNextBillingDate = (billingDate: Date, renewalPeriod: string): Date => {
 
 const sendPushNotification = async (pushToken: string, title: string, message: string) => {
   try {
+    const payload = {
+      to: pushToken,
+      title,
+      body: message,
+      sound: 'default',
+      priority: 'high'
+    };
+    console.log('Payload push:', payload);
+
     const response = await fetch('https://exp.host/--/api/v2/push/send', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${expoAccessToken}`
       },
-      body: JSON.stringify({
-        to: pushToken,
-        title,
-        body: message,
-        sound: 'default',
-        priority: 'high'
-      })
-    })
+      body: JSON.stringify(payload)
+    });
+    const responseBody = await response.text();
+    console.log('Expo response:', response.status, responseBody);
 
     if (!response.ok) {
-      throw new Error(`Erro ao enviar push notification: ${response.statusText}`)
+      throw new Error(`Erro ao enviar push notification: ${response.statusText}`);
     }
   } catch (error) {
-    console.error('Erro ao enviar push notification:', error)
+    console.error('Erro ao enviar push notification:', error);
   }
 }
 
