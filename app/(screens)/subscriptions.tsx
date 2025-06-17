@@ -23,7 +23,6 @@ export default function SubscriptionsScreen() {
     const billingDate = new Date(sub.billing_date);
     const today = new Date();
     
-    // Se a data de cobrança já passou, calcula a próxima
     if (billingDate < today) {
       switch (sub.renewal_period.toLowerCase()) {
         case 'diário':
@@ -90,11 +89,9 @@ export default function SubscriptionsScreen() {
         filtered = filtered.sort((a, b) => b.name.localeCompare(a.name));
         break;
       default:
-        // Default is all
         break;
     }
     
-    // Sempre ordena por data da próxima cobrança, exceto quando ordenado por preço ou alfabeticamente
     if (filter !== 'maiorParaMenor' && filter !== 'menorParaMaior' && filter !== 'aZ' && filter !== 'zA') {
       filtered = filtered.sort((a, b) => a.nextBillingDate.getTime() - b.nextBillingDate.getTime());
     }

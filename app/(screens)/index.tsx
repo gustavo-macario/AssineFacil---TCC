@@ -27,7 +27,6 @@ export default function HomeScreen() {
     if (!session) return;
 
     try {
-      // Não é mais necessário processar as próximas cobranças
       setIsLoading(false);
       setRefreshing(false);
     } catch (error) {

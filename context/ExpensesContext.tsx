@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useSubscriptions } from './SubscriptionContext';
 import { isLeapYear, getDaysInMonth } from 'date-fns';
-import { Subscription } from '@/types'; // Certifique-se de que este caminho está correto
+import { Subscription } from '@/types'; 
 
 interface ExpensesContextData {
   monthlyCost: number;
@@ -47,16 +47,14 @@ export function ExpensesProvider({ children }: { children: React.ReactNode }) {
     const currentDate = new Date();
     const daysInCurrentMonth = getDaysInMonth(currentDate);
     const daysInCurrentYear = isLeapYear(currentDate) ? 366 : 365;
-    const weeksInYear = 52.14; // Média de semanas em um ano (365.25 / 7)
+    const weeksInYear = 52.14; 
     const monthsInYear = 12;
     const quartersInYear = 4;
 
     return subscriptions.filter(sub => sub.active).reduce((total, sub) => {
-      // Garante que amount é um número válido, default para 0 se não for.
       const amount = Number(sub.amount) || 0;
       const period = normalizePeriod(sub.renewal_period);
 
-      // Se o valor ou o período normalizado não forem válidos, ignora a assinatura.
       if (amount <= 0 || !period) {
         return total;
       }
@@ -108,8 +106,6 @@ export function ExpensesProvider({ children }: { children: React.ReactNode }) {
             default: return total + (amount / monthsInYear); // Default para mensal
           }
         default:
-          // Se o período da assinatura não for reconhecido, o custo é adicionado uma vez.
-          // Você pode querer logar isso ou tratá-lo de forma diferente.
           return total + amount;
       }
     }, 0);
@@ -118,7 +114,7 @@ export function ExpensesProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setMonthlyCost(getTotalByFrequency('mensal'));
     setYearlyCost(getTotalByFrequency('anual'));
-  }, [subscriptions]); // Recalcula sempre que a lista de subscriptions muda
+  }, [subscriptions]); 
 
   return (
     <ExpensesContext.Provider

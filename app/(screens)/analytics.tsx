@@ -183,7 +183,6 @@ export default function AnalyticsScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.contentContainer}
     >
-      {/* <Text style={[styles.screenTitle, { color: colors.text }]}>Análises</Text> */}
       
       <View style={styles.summaryContainer}>
         <View style={[styles.summaryCard, { backgroundColor: colors.card }]}>

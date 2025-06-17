@@ -12,7 +12,6 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { ExpensesProvider } from '@/context/ExpensesContext';
 
-// Keep the splash screen visible until fonts are loaded
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -28,7 +27,6 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
-      // Hide splash screen
       SplashScreen.hideAsync();
       setAppIsReady(true);
     }

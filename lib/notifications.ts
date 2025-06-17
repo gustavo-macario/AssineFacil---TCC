@@ -31,7 +31,6 @@ export async function registerForPushNotificationsAsync() {
     }
     
     try {
-      // Em desenvolvimento, usamos o token de desenvolvimento
       if (__DEV__) {
         token = (await Notifications.getExpoPushTokenAsync({
           projectId: Constants.expoConfig?.extra?.eas?.projectId,

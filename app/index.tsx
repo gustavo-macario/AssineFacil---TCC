@@ -6,7 +6,6 @@ import { ActivityIndicator, View, StyleSheet } from 'react-native';
 export default function Index() {
   const { session, isLoading } = useAuth();
 
-  // While we're figuring out the auth state, show a loading indicator
   if (isLoading) {
     return (
       <View style={styles.container}>
@@ -15,8 +14,6 @@ export default function Index() {
     );
   }
 
-  // If user is authenticated, redirect to app home page
-  // Otherwise, redirect to auth pages
   return session ? <Redirect href="/(screens)" /> : <Redirect href="/(auth)" />;
 }
 

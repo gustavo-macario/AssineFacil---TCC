@@ -3,7 +3,6 @@ import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-// Create secure storage for tokens
 const ExpoSecureStoreAdapter = {
   getItem: (key: string) => {
     return SecureStore.getItemAsync(key);
@@ -16,7 +15,6 @@ const ExpoSecureStoreAdapter = {
   },
 };
 
-// Use memory storage for web platform
 const MemoryStorageAdapter = {
   getItem: (key: string) => {
     return localStorage.getItem(key);

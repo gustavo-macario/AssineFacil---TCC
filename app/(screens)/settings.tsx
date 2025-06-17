@@ -159,7 +159,6 @@ export default function SettingsScreen() {
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        {/* <Text style={[styles.title, { color: colors.text }]}>Configurações</Text> */}
       </View>
 
       {/* Profile Section */}
@@ -181,7 +180,6 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      {/* Admin Section - Only visible for admin users */}
       {userProfile?.role === 'admin' && (
         <View style={[styles.section, { backgroundColor: colors.card }]}>
           <TouchableOpacity
@@ -201,7 +199,6 @@ export default function SettingsScreen() {
         </View>
       )}
 
-      {/* Preferences Section */}
       <Text style={[styles.sectionTitle, { color: colors.text }]}>Preferências</Text>
       <View style={[styles.section, { backgroundColor: colors.card }]}>
         <View style={styles.settingRow}>
@@ -259,7 +256,6 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      {/* Account Section */}
       <Text style={[styles.sectionTitle, { color: colors.text }]}>Conta</Text>
       <View style={[styles.section, { backgroundColor: colors.card }]}>
         <View style={styles.settingRow}>
@@ -307,7 +303,6 @@ export default function SettingsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* About Section */}
       <Text style={[styles.sectionTitle, { color: colors.text }]}>Sobre</Text>
       <View style={[styles.section, { backgroundColor: colors.card }]}>
         <View style={styles.settingRow}>

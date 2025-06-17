@@ -19,7 +19,6 @@ export default function SubscriptionChart({ data }: SubscriptionChartProps) {
   
   const total = data.reduce((sum, item) => sum + item.amount, 0);
   
-  // Create a simple pie chart
   const radius = 80;
   const centerX = 100;
   const centerY = 100;
@@ -29,19 +28,16 @@ export default function SubscriptionChart({ data }: SubscriptionChartProps) {
     const percentage = item.amount / total;
     const endAngle = startAngle + percentage * 2 * Math.PI;
     
-    // Calculate path
     const x1 = centerX + radius * Math.cos(startAngle);
     const y1 = centerY + radius * Math.sin(startAngle);
     const x2 = centerX + radius * Math.cos(endAngle);
     const y2 = centerY + radius * Math.sin(endAngle);
     
-    // For label placement
     const labelAngle = startAngle + (endAngle - startAngle) / 2;
     const labelRadius = radius * 0.7;
     const labelX = centerX + labelRadius * Math.cos(labelAngle);
     const labelY = centerY + labelRadius * Math.sin(labelAngle);
     
-    // Create path
     const largeArcFlag = percentage > 0.5 ? 1 : 0;
     const pathData = [
       `M ${centerX} ${centerY}`,

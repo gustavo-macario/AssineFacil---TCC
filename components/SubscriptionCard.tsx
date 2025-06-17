@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { format, addDays, addWeeks, addMonths, addYears } from 'date-fns';
-import { ptBR } from 'date-fns/locale'; // Importando a localidade PT-BR
+import { ptBR } from 'date-fns/locale'; 
 import { useTheme } from '@/context/ThemeContext';
 import { CreditCard, DollarSign } from 'lucide-react-native';
 import { Subscription } from '@/types';
@@ -20,7 +20,6 @@ export default function SubscriptionCard({ subscription, onPress, currencySymbol
     const billingDate = new Date(subscription.billing_date + 'T00:00:00');
     const today = new Date();
     
-    // Se a data de cobrança já passou, calcula a próxima
     if (billingDate < today) {
       switch (subscription.renewal_period.toLowerCase()) {
         case 'diário':
