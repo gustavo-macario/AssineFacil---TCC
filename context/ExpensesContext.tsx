@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useSubscriptions } from './SubscriptionContext';
 import { isLeapYear, getDaysInMonth } from 'date-fns';
-import { Subscription } from '@/types'; 
 
 interface ExpensesContextData {
   monthlyCost: number;

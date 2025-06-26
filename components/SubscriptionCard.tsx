@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { format, addDays, addWeeks, addMonths, addYears } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale'; 
 import { useTheme } from '@/context/ThemeContext';
 import { CreditCard, DollarSign } from 'lucide-react-native';
 import { Subscription } from '@/types';
+import { useNextBillingDate } from '@/hooks/useNextBillingDate';
 
 interface SubscriptionCardProps {
   subscription: Subscription;
@@ -14,55 +15,18 @@ interface SubscriptionCardProps {
 
 export default function SubscriptionCard({ subscription, onPress, currencySymbol }: SubscriptionCardProps) {
   const { colors } = useTheme();
-
-  // Função corrigida para calcular a próxima data de cobrança
-  const getNextBillingDate = (): Date => {
-    // É mais seguro parsear a data assim para evitar problemas com fuso horário e inconsistências
-    let nextDate = new Date(subscription.billing_date + 'T00:00:00');
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    // Se a data já está no futuro (ou é hoje), não precisa fazer nada
-    if (nextDate >= today) {
-      return nextDate;
-    }
-
-    // Se a data está no passado, calculamos a próxima data válida
-    while (nextDate < today) {
-      switch (subscription.renewal_period.toLowerCase()) {
-        case 'diario':
-          // A forma mais eficiente para o diário é calcular a diferença de dias
-          const daysDiff = Math.ceil((today.getTime() - nextDate.getTime()) / (1000 * 60 * 60 * 24));
-          return addDays(nextDate, daysDiff);
-        case 'semanal':
-          nextDate = addWeeks(nextDate, 1);
-          break;
-        case 'mensal':
-          nextDate = addMonths(nextDate, 1);
-          break;
-        case 'trimestral':
-          nextDate = addMonths(nextDate, 3);
-          break;
-        case 'anual':
-          nextDate = addYears(nextDate, 1);
-          break;
-        default:
-          // Define um padrão seguro (mensal) caso o período seja desconhecido
-          nextDate = addMonths(nextDate, 1);
-          break;
-      }
-    }
-    
-    return nextDate;
-  };
-
-  const nextBillingDate = getNextBillingDate();
-  const daysUntilBilling = Math.ceil((nextBillingDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+  const { nextBillingDate, isLoading, error } = useNextBillingDate(subscription);
 
   const getStatusColor = (): string => {
     if (!subscription.active) {
       return colors.textTertiary;
     }
+    
+    if (!nextBillingDate) {
+      return colors.textSecondary;
+    }
+    
+    const daysUntilBilling = Math.ceil((nextBillingDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
     
     if (daysUntilBilling <= 3) {
       return colors.warning;
@@ -73,6 +37,26 @@ export default function SubscriptionCard({ subscription, onPress, currencySymbol
 
   const formatDate = (date: Date) => {
     return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+  };
+
+  const getDateText = () => {
+    if (!subscription.active) {
+      return 'Inativa';
+    }
+    
+    if (isLoading) {
+      return 'Carregando...';
+    }
+    
+    if (error) {
+      return 'Erro ao calcular data';
+    }
+    
+    if (!nextBillingDate) {
+      return 'Data não disponível';
+    }
+    
+    return `Próxima: ${formatDate(nextBillingDate)}`;
   };
 
   return (
@@ -116,9 +100,7 @@ export default function SubscriptionCard({ subscription, onPress, currencySymbol
               {subscription.renewal_period.charAt(0).toUpperCase() + subscription.renewal_period.slice(1).toLowerCase()}
             </Text>
             <Text style={[styles.dateText, { color: getStatusColor() }]}> 
-              {subscription.active 
-                ? `Próxima: ${formatDate(nextBillingDate)}` 
-                : 'Inativa'}
+              {getDateText()}
             </Text>
             {subscription.payment_method && (
               <View style={styles.paymentMethodContainer}>
@@ -193,7 +175,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 4,
-    marginBottom: 6, // Adicionado um espaço para melhor separação
+    marginBottom: 6,
   },
   categoryText: {
     fontFamily: 'Inter-Medium',

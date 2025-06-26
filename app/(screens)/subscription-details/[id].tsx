@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
@@ -8,6 +8,7 @@ import { ArrowLeft, Pencil, Trash2, Calendar, Clock, Tag, RefreshCw, CreditCard 
 import { format, addDays, addWeeks, addMonths, addQuarters, addYears } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Subscription } from '@/types';
+import { useNextBillingDate } from '@/hooks/useNextBillingDate';
 
 export default function SubscriptionDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -15,17 +16,14 @@ export default function SubscriptionDetailsScreen() {
   const { currencySymbol } = useCurrency();
   const { subscriptions, deleteSubscription } = useSubscriptions();
   const router = useRouter();
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [subscription, setSubscription] = useState<Subscription | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
-  const [nextBillingDates, setNextBillingDates] = useState<Date[]>([]);
-  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
-    if (id) {
+    if (id && subscriptions.length > 0) {
       const foundSubscription = subscriptions.find(sub => sub.id === id);
       if (foundSubscription) {
         setSubscription(foundSubscription);
-        setNextBillingDates(calculateNextBillingDates(foundSubscription));
       } else {
         router.push('/(screens)');
       }
@@ -33,42 +31,14 @@ export default function SubscriptionDetailsScreen() {
     }
   }, [id, subscriptions]);
 
+  const { nextBillingDate, isLoading: isCalculatingDate } = useNextBillingDate(subscription);
+
   const calculateNextBillingDates = (sub: Subscription): Date[] => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    if (!nextBillingDate) return [];
     
-    let currentDate = new Date(sub.billing_date + 'T00:00:00');
     const dates: Date[] = [];
-
+    let currentDate = new Date(nextBillingDate);
     const period = sub.renewal_period.trim().toLowerCase();
-
-    // Se a data de cobrança já passou, calcula a próxima data válida
-    if (currentDate < today) {
-      switch (period) {
-        case 'diario':
-          // Para assinaturas diárias, calcula quantos dias se passaram desde a última cobrança
-          const daysDiff = Math.ceil((today.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
-          currentDate = addDays(currentDate, daysDiff);
-          break;
-        case 'semanal':
-          currentDate = addWeeks(currentDate, 1);
-          break;
-        case 'mensal':
-          currentDate = addMonths(currentDate, 1);
-          break;
-        case 'trimestral':
-          currentDate = addQuarters(currentDate, 1);
-          break;
-        case 'anual':
-          currentDate = addYears(currentDate, 1);
-          break;
-        default:
-          console.warn(`Período de renovação desconhecido: "${sub.renewal_period}", assumindo "mensal".`);
-          currentDate = addMonths(currentDate, 1);
-      }
-    }
-
-    // Calcula as próximas cobranças (mais para assinaturas diárias)
     const numberOfPayments = period === 'diario' ? 7 : 3;
     
     for (let i = 0; i < numberOfPayments; i++) {
@@ -149,6 +119,8 @@ export default function SubscriptionDetailsScreen() {
     );
   }
 
+  const nextBillingDates = calculateNextBillingDates(subscription);
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.card }]}>
@@ -227,51 +199,58 @@ export default function SubscriptionDetailsScreen() {
             </View>
           )}
 
+          {subscription.payment_method && (
+            <View style={[styles.detailCard, { backgroundColor: colors.card }]}>
+              <View style={styles.detailRow}>
+                <View style={styles.detailIconContainer}>
+                  <CreditCard size={20} color={colors.primary} />
+                </View>
+                <View style={styles.detailTextContainer}>
+                  <Text style={[styles.detailTitle, { color: colors.text }]}>Método de Pagamento</Text>
+                  <Text style={[styles.detailValue, { color: colors.textSecondary }]}>{subscription.payment_method}</Text>
+                </View>
+              </View>
+            </View>
+          )}
+
           <View style={[styles.detailCard, { backgroundColor: colors.card }]}>
             <View style={styles.detailRow}>
               <View style={styles.detailIconContainer}>
-                <CreditCard size={20} color={colors.primary} />
+                <Clock size={20} color={colors.primary} />
               </View>
               <View style={styles.detailTextContainer}>
-                <Text style={[styles.detailTitle, { color: colors.text }]}>Método de Pagamento</Text>
-                <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
-                  {subscription.payment_method || 'Não informado'}
-                </Text>
+                <Text style={[styles.detailTitle, { color: colors.text }]}>Próximas Cobranças</Text>
+                {isCalculatingDate ? (
+                  <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
+                    Carregando...
+                  </Text>
+                ) : nextBillingDates.length > 0 ? (
+                  nextBillingDates.map((date, index) => (
+                    <Text key={index} style={[styles.detailValue, { color: colors.textSecondary }]}>
+                      {format(date, "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                    </Text>
+                  ))
+                ) : (
+                  <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
+                    Data não disponível
+                  </Text>
+                )}
               </View>
             </View>
           </View>
 
-          <View style={[styles.detailCard, { backgroundColor: colors.card }]}>
-            <Text style={[styles.detailTitle, { color: colors.text }]}>Próximos Pagamentos</Text>
-
-            {nextBillingDates.map((date, index) => (
-              <View key={index} style={styles.paymentRow}>
-                <Clock size={16} color={colors.primary} style={styles.paymentIcon} />
-                <Text style={[styles.paymentDate, { color: colors.text }]}>
-                  {format(date, "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                </Text>
-                <Text style={[styles.paymentAmount, { color: colors.text }]}>
-                  {currencySymbol}{Number(subscription.amount).toFixed(2)}
-                </Text>
-              </View>
-            ))}
-          </View>
-
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.deleteButton, { backgroundColor: colors.error }]}
-              onPress={handleDelete}
-            >
-              <Trash2 size={20} color="white" style={styles.buttonIcon} />
-              <Text style={styles.buttonText}>Excluir Assinatura</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity 
+            style={[styles.deleteButton, { backgroundColor: colors.error }]}
+            onPress={handleDelete}
+          >
+            <Trash2 size={20} color="white" />
+            <Text style={styles.deleteButtonText}>Excluir Assinatura</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -380,27 +359,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     fontSize: 16,
   },
-  paymentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  paymentIcon: {
-    marginRight: 8,
-  },
-  paymentDate: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 16,
-    flex: 1,
-  },
-  paymentAmount: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-  },
-  buttonContainer: {
-    marginTop: 16,
-    marginBottom: 32,
-  },
   deleteButton: {
     flexDirection: 'row',
     height: 48,
@@ -408,10 +366,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  buttonIcon: {
-    marginRight: 8,
-  },
-  buttonText: {
+  deleteButtonText: {
     fontFamily: 'Inter-SemiBold',
     fontSize: 16,
     color: 'white',

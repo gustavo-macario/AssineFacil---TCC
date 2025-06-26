@@ -1,45 +1,43 @@
-import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
 import { useSubscriptions } from '@/context/SubscriptionContext';
-import { useCurrency } from '@/context/CurrencyContext';
 import { useExpenses } from '@/context/ExpensesContext';
-import { format, addDays, isWithinInterval, startOfMonth, endOfMonth, isSameMonth, getDaysInMonth, isLeapYear, addMonths, addWeeks, addYears } from 'date-fns';
-import { CreditCard, TrendingUp, Calendar, Plus } from 'lucide-react-native';
-import SubscriptionCard from '@/components/SubscriptionCard';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Subscription } from '@/types';
+import { useCurrency } from '@/context/CurrencyContext';
+import { format, isWithinInterval, startOfMonth, endOfMonth, isSameMonth, getDaysInMonth, isLeapYear, addMonths, addWeeks, addYears } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { CreditCard, TrendingUp, Calendar, Plus } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import SubscriptionCard from '@/components/SubscriptionCard';
+import { Subscription } from '@/types';
+import { useNextBillingDate } from '@/hooks/useNextBillingDate';
 
 export default function HomeScreen() {
-  const { session } = useAuth();
   const { colors } = useTheme();
-  const { currencySymbol } = useCurrency();
+  const { session } = useAuth();
   const { subscriptions } = useSubscriptions();
   const { monthlyCost, yearlyCost } = useExpenses();
+  const { currencySymbol } = useCurrency();
   const router = useRouter();
+  
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = async () => {
-    if (!session) return;
-
     try {
-      setIsLoading(false);
-      setRefreshing(false);
+      setIsLoading(true);
+      // Os dados são carregados automaticamente pelos contextos
     } catch (error) {
-      console.error('Erro ao processar assinaturas:', error);
+      console.error('Erro ao carregar dados:', error);
     } finally {
       setIsLoading(false);
-      setRefreshing(false);
     }
   };
 
   const normalizePeriod = (period: string) => {
     if (!period) return '';
-    // Remove acentos e deixa minúsculo
     const norm = period.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     switch (norm) {
       case 'diario':
@@ -62,94 +60,6 @@ export default function HomeScreen() {
     }
   };
 
-  const getNextBillingDate = (sub: Subscription): Date => {
-    const billingDate = new Date(sub.billing_date + 'T00:00:00');
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    // Se a data de cobrança já passou, calcula a próxima
-    if (billingDate < today) {
-      switch (sub.renewal_period.toLowerCase()) {
-        case 'diario':
-          // Para assinaturas diárias, calcula quantos dias se passaram desde a última cobrança
-          const daysDiff = Math.ceil((today.getTime() - billingDate.getTime()) / (1000 * 60 * 60 * 24));
-          return addDays(billingDate, daysDiff);
-        case 'semanal':
-          return addWeeks(billingDate, 1);
-        case 'mensal':
-          return addMonths(billingDate, 1);
-        case 'trimestral':
-          return addMonths(billingDate, 3);
-        case 'anual':
-          return addYears(billingDate, 1);
-        default:
-          return addMonths(billingDate, 1);
-      }
-    }
-    
-    return billingDate;
-  };
-
-  const getTotalByFrequency = (freqKey: string) => {
-    const diasNoMes = getDaysInMonth(new Date());
-    const diasNoAno = isLeapYear(new Date()) ? 366 : 365;
-
-    return subscriptions.filter(sub => sub.active).reduce((sum, sub) => {
-      const amount = Number(sub.amount);
-      const period = normalizePeriod(sub.renewal_period);
-      
-      switch (freqKey) {
-        case 'diario':
-          switch (period) {
-            case 'diario': return sum + amount;
-            case 'semanal': return sum + amount / 7;
-            case 'mensal': return sum + amount / diasNoMes;
-            case 'trimestral': return sum + amount / (diasNoMes * 3);
-            case 'anual': return sum + amount / diasNoAno;
-            default: return sum + amount / diasNoMes;
-          }
-        case 'semanal':
-          switch (period) {
-            case 'diario': return sum + amount * 7;
-            case 'semanal': return sum + amount;
-            case 'mensal': return sum + amount / (diasNoMes / 7);
-            case 'trimestral': return sum + amount / ((diasNoMes * 3) / 7);
-            case 'anual': return sum + amount / (diasNoAno / 7);
-            default: return sum + amount / (diasNoMes / 7);
-          }
-        case 'mensal':
-          switch (period) {
-            case 'diario': return sum + amount * diasNoMes;
-            case 'semanal': return sum + amount * (diasNoMes / 7);
-            case 'mensal': return sum + amount;
-            case 'trimestral': return sum + amount / 3;
-            case 'anual': return sum + amount / 12;
-            default: return sum + amount;
-          }
-        case 'trimestral':
-          switch (period) {
-            case 'diario': return sum + amount * diasNoMes * 3;
-            case 'semanal': return sum + amount * ((diasNoMes * 3) / 7);
-            case 'mensal': return sum + amount * 3;
-            case 'trimestral': return sum + amount;
-            case 'anual': return sum + amount / 4;
-            default: return sum + amount * 3;
-          }
-        case 'anual':
-          switch (period) {
-            case 'diario': return sum + amount * diasNoAno;
-            case 'semanal': return sum + amount * (diasNoAno / 7);
-            case 'mensal': return sum + amount * 12;
-            case 'trimestral': return sum + amount * 4;
-            case 'anual': return sum + amount;
-            default: return sum + amount * 12;
-          }
-        default:
-          return sum + amount;
-      }
-    }, 0);
-  };
-
   const onRefresh = () => {
     setRefreshing(true);
     fetchData();
@@ -167,26 +77,47 @@ export default function HomeScreen() {
     );
   }
 
-  const nextMonthSubs = subscriptions
-    .filter(sub => sub.active)
-    .map(sub => ({
-      ...sub,
-      nextBillingDate: getNextBillingDate(sub)
-    }))
-    .filter(sub => {
-      const today = new Date();
-      const nextMonth = addMonths(today, 1);
-      
-      // Para assinaturas diárias, mostra as próximas 30 cobranças
-      if (sub.renewal_period.toLowerCase() === 'diario') {
-        const thirtyDaysFromNow = addDays(today, 30);
-        return sub.nextBillingDate <= thirtyDaysFromNow;
+  // Componente para renderizar uma assinatura com cálculo de data
+  const SubscriptionWithDate = ({ subscription }: { subscription: Subscription }) => {
+    const { nextBillingDate, isLoading: isCalculatingDate } = useNextBillingDate(subscription);
+    
+    if (isCalculatingDate) {
+      return null; // Não renderiza enquanto está calculando
+    }
+    
+    if (!nextBillingDate) {
+      return null; // Não renderiza se não conseguiu calcular a data
+    }
+    
+    const today = new Date();
+    const nextMonth = addMonths(today, 1);
+    
+    // Para assinaturas diárias, mostra as próximas 30 cobranças
+    if (subscription.renewal_period.toLowerCase() === 'diario') {
+      const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+      if (nextBillingDate > thirtyDaysFromNow) {
+        return null;
       }
-      
+    } else {
       // Para outras assinaturas, mostra as cobranças do próximo mês
-      return sub.nextBillingDate <= nextMonth;
-    })
-    .sort((a, b) => a.nextBillingDate.getTime() - b.nextBillingDate.getTime());
+      if (nextBillingDate > nextMonth) {
+        return null;
+      }
+    }
+    
+    return (
+      <SubscriptionCard
+        subscription={subscription}
+        onPress={() => router.push({
+          pathname: '/(screens)/subscription-details/[id]',
+          params: { id: subscription.id }
+        })}
+        currencySymbol={currencySymbol}
+      />
+    );
+  };
+
+  const nextMonthSubs = subscriptions.filter(sub => sub.active);
 
   return (
     <ScrollView 
@@ -259,21 +190,14 @@ export default function HomeScreen() {
         </View>
         
         {nextMonthSubs.length > 0 ? (
-          nextMonthSubs.map((subscription) => (
-            <SubscriptionCard 
-              key={subscription.id} 
-              subscription={subscription}
-              onPress={() => router.push({
-                pathname: '/(screens)/subscription-details/[id]',
-                params: { id: subscription.id }
-              })}
-              currencySymbol={currencySymbol}
-            />
+          nextMonthSubs.map(subscription => (
+            <SubscriptionWithDate key={subscription.id} subscription={subscription} />
           ))
         ) : (
-          <View style={[styles.emptyState, { backgroundColor: colors.card }]}>
-            <Text style={[styles.emptyStateText, { color: colors.textSecondary }]}>
-              Nenhuma assinatura com cobrança nos próximos 30 dias
+          <View style={styles.emptyContainer}>
+            <Calendar size={48} color={colors.textTertiary} />
+            <Text style={[styles.emptyText, { color: colors.textTertiary }]}>
+              Nenhuma cobrança nos próximos 30 dias
             </Text>
           </View>
         )}
@@ -361,12 +285,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     fontSize: 18,
   },
-  emptyState: {
+  emptyContainer: {
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
   },
-  emptyStateText: {
+  emptyText: {
     fontFamily: 'Inter-Regular',
     fontSize: 14,
     textAlign: 'center',

@@ -1,63 +1,32 @@
-import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
 import { useSubscriptions } from '@/context/SubscriptionContext';
+import { useCurrency } from '@/context/CurrencyContext';
 import { Search, Filter, Plus } from 'lucide-react-native';
 import SubscriptionCard from '@/components/SubscriptionCard';
 import { Subscription } from '@/types';
-import { useCurrency } from '@/context/CurrencyContext';
-import { addDays, addWeeks, addMonths, addYears } from 'date-fns';
 
 export default function SubscriptionsScreen() {
   const { colors } = useTheme();
-  const { currencySymbol } = useCurrency();
   const { subscriptions } = useSubscriptions();
+  const { currencySymbol } = useCurrency();
   const router = useRouter();
-  const [filteredSubscriptions, setFilteredSubscriptions] = useState<Subscription[]>([]);
+  
   const [searchQuery, setSearchQuery] = useState('');
+  const [filteredSubscriptions, setFilteredSubscriptions] = useState<Subscription[]>([]);
   const [filterVisible, setFilterVisible] = useState(false);
   const [currentFilter, setCurrentFilter] = useState('all');
-
-  const getNextBillingDate = (sub: Subscription): Date => {
-    const billingDate = new Date(sub.billing_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    if (billingDate < today) {
-      switch (sub.renewal_period.toLowerCase()) {
-        case 'diario':
-          const daysDiff = Math.ceil((today.getTime() - billingDate.getTime()) / (1000 * 60 * 60 * 24));
-          return addDays(billingDate, daysDiff);
-        case 'semanal':
-          return addWeeks(billingDate, 1);
-        case 'mensal':
-          return addMonths(billingDate, 1);
-        case 'trimestral':
-          return addMonths(billingDate, 3);
-        case 'anual':
-          return addYears(billingDate, 1);
-        default:
-          return addMonths(billingDate, 1);
-      }
-    }
-    
-    return billingDate;
-  };
 
   useEffect(() => {
     if (searchQuery) {
       const filtered = subscriptions
-        .map(sub => ({
-          ...sub,
-          nextBillingDate: getNextBillingDate(sub)
-        }))
         .filter(sub => 
           sub.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           sub.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           sub.category?.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        .sort((a, b) => a.nextBillingDate.getTime() - b.nextBillingDate.getTime());
+        );
       setFilteredSubscriptions(filtered);
     } else {
       applyFilter(currentFilter);
@@ -66,10 +35,7 @@ export default function SubscriptionsScreen() {
 
   const applyFilter = (filter: string) => {
     setCurrentFilter(filter);
-    let filtered = subscriptions.map(sub => ({
-      ...sub,
-      nextBillingDate: getNextBillingDate(sub)
-    }));
+    let filtered = [...subscriptions];
     
     switch (filter) {
       case 'ativo':
@@ -92,10 +58,6 @@ export default function SubscriptionsScreen() {
         break;
       default:
         break;
-    }
-    
-    if (filter !== 'maiorParaMenor' && filter !== 'menorParaMaior' && filter !== 'aZ' && filter !== 'zA') {
-      filtered = filtered.sort((a, b) => a.nextBillingDate.getTime() - b.nextBillingDate.getTime());
     }
     
     setFilteredSubscriptions(filtered);
@@ -220,7 +182,7 @@ export default function SubscriptionsScreen() {
       />
 
       <TouchableOpacity
-        style={[styles.floatingButton, { backgroundColor: colors.primary }]}
+        style={[styles.fab, { backgroundColor: colors.primary }]}
         onPress={() => router.push('/(screens)/add-subscription')}
       >
         <Plus size={24} color="white" />
@@ -228,7 +190,6 @@ export default function SubscriptionsScreen() {
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -302,7 +263,7 @@ const styles = StyleSheet.create({
     color: 'white',
     marginLeft: 8,
   },
-  floatingButton: {
+  fab: {
     position: 'absolute',
     right: 16,
     bottom: 16,
