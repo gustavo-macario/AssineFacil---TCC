@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, Platform, Image } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
@@ -62,6 +62,7 @@ export default function Login() {
             onChangeText={setEmail}
             autoCapitalize="none"
             keyboardType="email-address"
+            maxLength={100}
           />
         </View>
 
@@ -76,6 +77,7 @@ export default function Login() {
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!showPassword}
+            maxLength={128}
           />
           <TouchableOpacity 
             style={styles.eyeIcon}
@@ -105,11 +107,9 @@ export default function Login() {
         </TouchableOpacity>
 
         <View style={styles.linkContainer}>
-          <Link href="/(auth)/forgot-password" asChild>
-            <TouchableOpacity>
-              <Text style={[styles.link, { color: colors.primary }]}>Esqueceu a senha?</Text>
-            </TouchableOpacity>
-          </Link>
+          <TouchableOpacity onPress={() => Alert.alert('Em Desenvolvimento', 'A funcionalidade de recuperação de senha está sendo implementada. Em breve estará disponível!')}>
+            <Text style={[styles.link, { color: colors.primary }]}>Esqueceu a senha?</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.signupContainer}>

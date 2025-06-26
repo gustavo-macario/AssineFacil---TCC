@@ -22,11 +22,13 @@ export default function SubscriptionsScreen() {
   const getNextBillingDate = (sub: Subscription): Date => {
     const billingDate = new Date(sub.billing_date);
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     
     if (billingDate < today) {
       switch (sub.renewal_period.toLowerCase()) {
-        case 'diário':
-          return addDays(billingDate, 1);
+        case 'diario':
+          const daysDiff = Math.ceil((today.getTime() - billingDate.getTime()) / (1000 * 60 * 60 * 24));
+          return addDays(billingDate, daysDiff);
         case 'semanal':
           return addWeeks(billingDate, 1);
         case 'mensal':

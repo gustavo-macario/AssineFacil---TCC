@@ -65,12 +65,15 @@ export default function HomeScreen() {
   const getNextBillingDate = (sub: Subscription): Date => {
     const billingDate = new Date(sub.billing_date + 'T00:00:00');
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     
     // Se a data de cobrança já passou, calcula a próxima
     if (billingDate < today) {
       switch (sub.renewal_period.toLowerCase()) {
-        case 'diário':
-          return addDays(billingDate, 1);
+        case 'diario':
+          // Para assinaturas diárias, calcula quantos dias se passaram desde a última cobrança
+          const daysDiff = Math.ceil((today.getTime() - billingDate.getTime()) / (1000 * 60 * 60 * 24));
+          return addDays(billingDate, daysDiff);
         case 'semanal':
           return addWeeks(billingDate, 1);
         case 'mensal':
@@ -173,6 +176,14 @@ export default function HomeScreen() {
     .filter(sub => {
       const today = new Date();
       const nextMonth = addMonths(today, 1);
+      
+      // Para assinaturas diárias, mostra as próximas 30 cobranças
+      if (sub.renewal_period.toLowerCase() === 'diario') {
+        const thirtyDaysFromNow = addDays(today, 30);
+        return sub.nextBillingDate <= thirtyDaysFromNow;
+      }
+      
+      // Para outras assinaturas, mostra as cobranças do próximo mês
       return sub.nextBillingDate <= nextMonth;
     })
     .sort((a, b) => a.nextBillingDate.getTime() - b.nextBillingDate.getTime());

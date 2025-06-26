@@ -67,7 +67,7 @@ export default function AppLayout() {
           title: 'Início',
           tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
           headerTitle: 'AssineFacil',
-          headerTitleAlign: 'center',
+          headerTitleAlign: 'left',
         }}
       />
       <Tabs.Screen
@@ -75,7 +75,7 @@ export default function AppLayout() {
         options={{
           title: 'Assinaturas',
           tabBarIcon: ({ color, size }) => <CreditCard size={size} color={color} />,
-          headerTitleAlign: 'center',
+          headerTitleAlign: 'left',
         }}
       />
       <Tabs.Screen
@@ -83,7 +83,7 @@ export default function AppLayout() {
         options={{
           title: 'Análises',
           tabBarIcon: ({ color, size }) => <LineChart size={size} color={color} />,
-          headerTitleAlign: 'center',
+          headerTitleAlign: 'left',
         }}
       />
       <Tabs.Screen
@@ -91,7 +91,7 @@ export default function AppLayout() {
         options={{
           title: 'Alertas',
           tabBarIcon: ({ color, size }) => <Bell size={size} color={color} />,
-          headerTitleAlign: 'center',
+          headerTitleAlign: 'left',
         }}
       />
       <Tabs.Screen
@@ -99,7 +99,7 @@ export default function AppLayout() {
         options={{
           title: 'Ajustes',
           tabBarIcon: ({ color, size }) => <Settings size={size} color={color} />,
-          headerTitleAlign: 'center',
+          headerTitleAlign: 'left',
         }}
       />
       <Tabs.Screen
@@ -107,7 +107,7 @@ export default function AppLayout() {
         options={{
           href: null,
           headerTitle: 'Painel Administrativo',
-          headerTitleAlign: 'center',
+          headerTitleAlign: 'left',
           headerLeft: () => (
             <TouchableOpacity
               onPress={() => router.push('/(screens)/settings')}
@@ -123,7 +123,7 @@ export default function AppLayout() {
         options={{
           href: null,
           headerTitle: 'Alterar Senha',
-          headerTitleAlign: 'center',
+          headerTitleAlign: 'left',
           headerLeft: () => (
             <TouchableOpacity
               onPress={() => router.push('/(screens)/settings')}

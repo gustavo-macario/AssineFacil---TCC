@@ -28,11 +28,14 @@ interface Subscription {
 
 const getNextBillingDate = (billingDate: Date, renewalPeriod: string): Date => {
   const today = new Date()
+  today.setHours(0, 0, 0, 0)
   
   if (billingDate < today) {
     switch (renewalPeriod.toLowerCase()) {
-      case 'diário':
-        return addDays(billingDate, 1)
+      case 'diario':
+        // Para assinaturas diárias, calcula quantos dias se passaram desde a última cobrança
+        const daysDiff = Math.ceil((today.getTime() - billingDate.getTime()) / (1000 * 60 * 60 * 24))
+        return addDays(billingDate, daysDiff)
       case 'semanal':
         return addWeeks(billingDate, 1)
       case 'mensal':

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, Image } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
@@ -13,16 +13,114 @@ export default function Signup() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // Estados para validação em tempo real
+  const [emailError, setEmailError] = useState('');
+  const [nameError, setNameError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  
   const { signUp } = useAuth();
   const router = useRouter();
   const { theme, colors } = useTheme();
 
+  // Função para validar email
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email) && email.length <= 100;
+  };
+
+  // Função para validar nome
+  const validateName = (name: string) => {
+    return name.trim().length >= 2 && name.length <= 50;
+  };
+
+  // Função para validar senha
+  const validatePassword = (password: string) => {
+    return password.length >= 6 && password.length <= 128;
+  };
+
+  // Validação em tempo real do email
+  const handleEmailChange = (text: string) => {
+    if (text.length <= 100) {
+      setEmail(text);
+      if (text && !validateEmail(text)) {
+        setEmailError('Email inválido ou muito longo (máx. 100 caracteres)');
+      } else {
+        setEmailError('');
+      }
+    }
+  };
+
+  // Validação em tempo real do nome
+  const handleNameChange = (text: string) => {
+    if (text.length <= 50) {
+      setFullName(text);
+      if (text && !validateName(text)) {
+        setNameError('Nome deve ter entre 2 e 50 caracteres');
+      } else {
+        setNameError('');
+      }
+    }
+  };
+
+  // Validação em tempo real da senha
+  const handlePasswordChange = (text: string) => {
+    if (text.length <= 128) {
+      setPassword(text);
+      if (text && !validatePassword(text)) {
+        setPasswordError('Senha deve ter entre 6 e 128 caracteres');
+      } else {
+        setPasswordError('');
+      }
+      
+      // Validar confirmação de senha quando a senha muda
+      if (confirmPassword && text !== confirmPassword) {
+        setConfirmPasswordError('As senhas não coincidem');
+      } else if (confirmPassword) {
+        setConfirmPasswordError('');
+      }
+    }
+  };
+
+  // Validação em tempo real da confirmação de senha
+  const handleConfirmPasswordChange = (text: string) => {
+    if (text.length <= 128) {
+      setConfirmPassword(text);
+      if (text && text !== password) {
+        setConfirmPasswordError('As senhas não coincidem');
+      } else {
+        setConfirmPasswordError('');
+      }
+    }
+  };
+
   const handleSignup = async () => {
+    // Validação de campos vazios
     if (!email || !password || !fullName || !confirmPassword) {
       Alert.alert('Erro', 'Por favor, preencha todos os campos');
       return;
     }
 
+    // Validação do nome
+    if (!validateName(fullName)) {
+      Alert.alert('Erro', 'O nome deve ter entre 2 e 50 caracteres');
+      return;
+    }
+
+    // Validação do email
+    if (!validateEmail(email)) {
+      Alert.alert('Erro', 'Por favor, insira um email válido ou máximo de 100 caracteres');
+      return;
+    }
+
+    // Validação da senha
+    if (!validatePassword(password)) {
+      Alert.alert('Erro', 'A senha deve ter entre 6 e 128 caracteres');
+      return;
+    }
+
+    // Validação de confirmação de senha
     if (password !== confirmPassword) {
       Alert.alert('Erro', 'As senhas não coincidem');
       return;
@@ -30,12 +128,12 @@ export default function Signup() {
 
     setIsLoading(true);
     try {
-      const { error } = await signUp(email, password, { full_name: fullName });
+      const { error } = await signUp(email, password, { full_name: fullName.trim() });
       if (error) throw error;
       
       Alert.alert(
         'Conta Criada', 
-        'Sua conta foi criada com sucesso!',
+        'Verifique seu e-mail para ativar sua conta. O link de ativação foi enviado!',
         [{ text: 'Entrar', onPress: () => router.replace('/(auth)/login') }]
       );
     } catch (error: any) {
@@ -72,9 +170,11 @@ export default function Signup() {
             placeholder="Nome"
             placeholderTextColor={colors.textSecondary}
             value={fullName}
-            onChangeText={setFullName}
+            onChangeText={handleNameChange}
+            maxLength={50}
           />
         </View>
+        {nameError ? <Text style={[styles.errorText, { color: colors.error }]}>{nameError}</Text> : null}
 
         <View style={styles.inputContainer}>
           <View style={[styles.iconContainer, { backgroundColor: colors.card }]}>
@@ -85,11 +185,13 @@ export default function Signup() {
             placeholder="E-mail"
             placeholderTextColor={colors.textSecondary}
             value={email}
-            onChangeText={setEmail}
+            onChangeText={handleEmailChange}
             autoCapitalize="none"
             keyboardType="email-address"
+            maxLength={100}
           />
         </View>
+        {emailError ? <Text style={[styles.errorText, { color: colors.error }]}>{emailError}</Text> : null}
 
         <View style={styles.inputContainer}>
           <View style={[styles.iconContainer, { backgroundColor: colors.card }]}>
@@ -100,8 +202,9 @@ export default function Signup() {
             placeholder="Senha"
             placeholderTextColor={colors.textSecondary}
             value={password}
-            onChangeText={setPassword}
+            onChangeText={handlePasswordChange}
             secureTextEntry={!showPassword}
+            maxLength={128}
           />
           <TouchableOpacity 
             style={styles.eyeIcon}
@@ -114,6 +217,7 @@ export default function Signup() {
             )}
           </TouchableOpacity>
         </View>
+        {passwordError ? <Text style={[styles.errorText, { color: colors.error }]}>{passwordError}</Text> : null}
 
         <View style={styles.inputContainer}>
           <View style={[styles.iconContainer, { backgroundColor: colors.card }]}>
@@ -124,8 +228,9 @@ export default function Signup() {
             placeholder="Confirmar Senha"
             placeholderTextColor={colors.textSecondary}
             value={confirmPassword}
-            onChangeText={setConfirmPassword}
+            onChangeText={handleConfirmPasswordChange}
             secureTextEntry={!showConfirmPassword}
+            maxLength={128}
           />
           <TouchableOpacity 
             style={styles.eyeIcon}
@@ -138,6 +243,7 @@ export default function Signup() {
             )}
           </TouchableOpacity>
         </View>
+        {confirmPasswordError ? <Text style={[styles.errorText, { color: colors.error }]}>{confirmPasswordError}</Text> : null}
 
         <TouchableOpacity 
           style={[styles.signupButton, { backgroundColor: colors.primary }]}
@@ -257,5 +363,12 @@ const styles = StyleSheet.create({
   loginLink: {
     fontFamily: 'Inter-SemiBold',
     fontSize: 14,
+  },
+  errorText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    marginTop: -16,
+    marginBottom: 16,
+    marginLeft: 56,
   },
 });

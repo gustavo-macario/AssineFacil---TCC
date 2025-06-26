@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { format, addDays, addWeeks, addMonths, addYears } from 'date-fns';
 import { ptBR } from 'date-fns/locale'; 
 import { useTheme } from '@/context/ThemeContext';
@@ -14,30 +14,46 @@ interface SubscriptionCardProps {
 
 export default function SubscriptionCard({ subscription, onPress, currencySymbol }: SubscriptionCardProps) {
   const { colors } = useTheme();
-  const [imageError, setImageError] = useState(false);
 
+  // Função corrigida para calcular a próxima data de cobrança
   const getNextBillingDate = (): Date => {
-    const billingDate = new Date(subscription.billing_date + 'T00:00:00');
+    // É mais seguro parsear a data assim para evitar problemas com fuso horário e inconsistências
+    let nextDate = new Date(subscription.billing_date + 'T00:00:00');
     const today = new Date();
-    
-    if (billingDate < today) {
+    today.setHours(0, 0, 0, 0);
+
+    // Se a data já está no futuro (ou é hoje), não precisa fazer nada
+    if (nextDate >= today) {
+      return nextDate;
+    }
+
+    // Se a data está no passado, calculamos a próxima data válida
+    while (nextDate < today) {
       switch (subscription.renewal_period.toLowerCase()) {
-        case 'diário':
-          return addDays(billingDate, 1);
+        case 'diario':
+          // A forma mais eficiente para o diário é calcular a diferença de dias
+          const daysDiff = Math.ceil((today.getTime() - nextDate.getTime()) / (1000 * 60 * 60 * 24));
+          return addDays(nextDate, daysDiff);
         case 'semanal':
-          return addWeeks(billingDate, 1);
+          nextDate = addWeeks(nextDate, 1);
+          break;
         case 'mensal':
-          return addMonths(billingDate, 1);
+          nextDate = addMonths(nextDate, 1);
+          break;
         case 'trimestral':
-          return addMonths(billingDate, 3);
+          nextDate = addMonths(nextDate, 3);
+          break;
         case 'anual':
-          return addYears(billingDate, 1);
+          nextDate = addYears(nextDate, 1);
+          break;
         default:
-          return addMonths(billingDate, 1);
+          // Define um padrão seguro (mensal) caso o período seja desconhecido
+          nextDate = addMonths(nextDate, 1);
+          break;
       }
     }
     
-    return billingDate;
+    return nextDate;
   };
 
   const nextBillingDate = getNextBillingDate();
@@ -97,7 +113,7 @@ export default function SubscriptionCard({ subscription, onPress, currencySymbol
         <View style={styles.detailsContainer}>
           <View style={{ flex: 1 }}>
             <Text style={[styles.periodText, { color: colors.textSecondary }]}> 
-              {subscription.renewal_period.charAt(0).toUpperCase() + subscription.renewal_period.slice(1)}
+              {subscription.renewal_period.charAt(0).toUpperCase() + subscription.renewal_period.slice(1).toLowerCase()}
             </Text>
             <Text style={[styles.dateText, { color: getStatusColor() }]}> 
               {subscription.active 
@@ -153,10 +169,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  logo: {
-    width: 24,
-    height: 24,
-  },
   iconText: {
     fontFamily: 'Inter-Bold',
     fontSize: 16,
@@ -181,6 +193,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 4,
+    marginBottom: 6, // Adicionado um espaço para melhor separação
   },
   categoryText: {
     fontFamily: 'Inter-Medium',

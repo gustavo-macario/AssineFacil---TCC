@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
@@ -18,19 +18,59 @@ export default function ChangePasswordScreen() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Estados para validação em tempo real
+  const [newPasswordError, setNewPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
+
+  // Função para validar senha
+  const validatePassword = (password: string) => {
+    return password.length >= 6 && password.length <= 128;
+  };
+
+  // Validação em tempo real da nova senha
+  const handleNewPasswordChange = (text: string) => {
+    if (text.length <= 128) {
+      setNewPassword(text);
+      if (text && !validatePassword(text)) {
+        setNewPasswordError('Senha deve ter entre 6 e 128 caracteres');
+      } else {
+        setNewPasswordError('');
+      }
+      
+      // Validar confirmação de senha quando a senha muda
+      if (confirmPassword && text !== confirmPassword) {
+        setConfirmPasswordError('As senhas não coincidem');
+      } else if (confirmPassword) {
+        setConfirmPasswordError('');
+      }
+    }
+  };
+
+  // Validação em tempo real da confirmação de senha
+  const handleConfirmPasswordChange = (text: string) => {
+    if (text.length <= 128) {
+      setConfirmPassword(text);
+      if (text && text !== newPassword) {
+        setConfirmPasswordError('As senhas não coincidem');
+      } else {
+        setConfirmPasswordError('');
+      }
+    }
+  };
+
   const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       Alert.alert('Erro', 'Por favor, preencha todos os campos.');
       return;
     }
 
-    if (newPassword !== confirmPassword) {
-      Alert.alert('Erro', 'As senhas não coincidem.');
+    if (!validatePassword(newPassword)) {
+      Alert.alert('Erro', 'A nova senha deve ter entre 6 e 128 caracteres.');
       return;
     }
 
-    if (newPassword.length < 6) {
-      Alert.alert('Erro', 'A nova senha deve ter pelo menos 6 caracteres.');
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Erro', 'As senhas não coincidem.');
       return;
     }
 
@@ -88,6 +128,7 @@ export default function ChangePasswordScreen() {
               secureTextEntry={!showCurrentPassword}
               value={currentPassword}
               onChangeText={setCurrentPassword}
+              maxLength={128}
             />
             <TouchableOpacity 
               style={styles.eyeIcon}
@@ -111,7 +152,8 @@ export default function ChangePasswordScreen() {
               placeholderTextColor={colors.textSecondary}
               secureTextEntry={!showNewPassword}
               value={newPassword}
-              onChangeText={setNewPassword}
+              onChangeText={handleNewPasswordChange}
+              maxLength={128}
             />
             <TouchableOpacity 
               style={styles.eyeIcon}
@@ -125,6 +167,7 @@ export default function ChangePasswordScreen() {
             </TouchableOpacity>
           </View>
         </View>
+        {newPasswordError ? <Text style={[styles.errorText, { color: colors.error }]}>{newPasswordError}</Text> : null}
 
         <View style={[styles.inputContainer, { backgroundColor: colors.card }]}>
           <View style={styles.inputWrapper}>
@@ -135,7 +178,8 @@ export default function ChangePasswordScreen() {
               placeholderTextColor={colors.textSecondary}
               secureTextEntry={!showConfirmPassword}
               value={confirmPassword}
-              onChangeText={setConfirmPassword}
+              onChangeText={handleConfirmPasswordChange}
+              maxLength={128}
             />
             <TouchableOpacity 
               style={styles.eyeIcon}
@@ -149,6 +193,7 @@ export default function ChangePasswordScreen() {
             </TouchableOpacity>
           </View>
         </View>
+        {confirmPasswordError ? <Text style={[styles.errorText, { color: colors.error }]}>{confirmPasswordError}</Text> : null}
 
         <TouchableOpacity
           style={[styles.button, { backgroundColor: colors.primary }]}
@@ -206,5 +251,12 @@ const styles = StyleSheet.create({
     color: 'white',
     fontFamily: 'Inter-SemiBold',
     fontSize: 16,
+  },
+  errorText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    marginTop: -8,
+    marginBottom: 8,
+    marginLeft: 16,
   },
 }); 

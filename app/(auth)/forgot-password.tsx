@@ -1,4 +1,8 @@
-import { useState } from 'react';
+// Tela de recuperação de senha - Temporariamente desabilitada
+// Para reativar, descomente o código abaixo e configure o Supabase corretamente
+
+/*
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
@@ -65,6 +69,7 @@ export default function ForgotPassword() {
                 onChangeText={setEmail}
                 autoCapitalize="none"
                 keyboardType="email-address"
+                maxLength={100}
               />
             </View>
 
@@ -176,3 +181,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+*/
+
+// Componente vazio para evitar warnings
+import React from 'react';
+
+export default function ForgotPassword() {
+  return null;
+}

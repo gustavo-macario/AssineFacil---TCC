@@ -34,33 +34,65 @@ export default function SubscriptionDetailsScreen() {
   }, [id, subscriptions]);
 
   const calculateNextBillingDates = (sub: Subscription): Date[] => {
-    let lastDate = new Date(sub.billing_date + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    let currentDate = new Date(sub.billing_date + 'T00:00:00');
     const dates: Date[] = [];
 
     const period = sub.renewal_period.trim().toLowerCase();
 
-    for (let i = 0; i < 3; i++) {
+    // Se a data de cobrança já passou, calcula a próxima data válida
+    if (currentDate < today) {
       switch (period) {
-        case 'diário':
-          lastDate = addDays(lastDate, 1);
+        case 'diario':
+          // Para assinaturas diárias, calcula quantos dias se passaram desde a última cobrança
+          const daysDiff = Math.ceil((today.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+          currentDate = addDays(currentDate, daysDiff);
           break;
         case 'semanal':
-          lastDate = addWeeks(lastDate, 1);
+          currentDate = addWeeks(currentDate, 1);
           break;
         case 'mensal':
-          lastDate = addMonths(lastDate, 1);
+          currentDate = addMonths(currentDate, 1);
           break;
         case 'trimestral':
-          lastDate = addQuarters(lastDate, 1);
+          currentDate = addQuarters(currentDate, 1);
           break;
         case 'anual':
-          lastDate = addYears(lastDate, 1);
+          currentDate = addYears(currentDate, 1);
           break;
         default:
           console.warn(`Período de renovação desconhecido: "${sub.renewal_period}", assumindo "mensal".`);
-          lastDate = addMonths(lastDate, 1);
+          currentDate = addMonths(currentDate, 1);
       }
-      dates.push(lastDate);
+    }
+
+    // Calcula as próximas cobranças (mais para assinaturas diárias)
+    const numberOfPayments = period === 'diario' ? 7 : 3;
+    
+    for (let i = 0; i < numberOfPayments; i++) {
+      dates.push(new Date(currentDate));
+      
+      switch (period) {
+        case 'diario':
+          currentDate = addDays(currentDate, 1);
+          break;
+        case 'semanal':
+          currentDate = addWeeks(currentDate, 1);
+          break;
+        case 'mensal':
+          currentDate = addMonths(currentDate, 1);
+          break;
+        case 'trimestral':
+          currentDate = addQuarters(currentDate, 1);
+          break;
+        case 'anual':
+          currentDate = addYears(currentDate, 1);
+          break;
+        default:
+          currentDate = addMonths(currentDate, 1);
+      }
     }
 
     return dates;
@@ -159,7 +191,7 @@ export default function SubscriptionDetailsScreen() {
                 <Calendar size={20} color={colors.primary} />
               </View>
               <View style={styles.detailTextContainer}>
-                <Text style={[styles.detailTitle, { color: colors.text }]}>Data de Faturamento</Text>
+                <Text style={[styles.detailTitle, { color: colors.text }]}>Data de Início da Assinatura</Text>
                 <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
                   {format(new Date(subscription.billing_date + 'T00:00:00'), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
                 </Text>
@@ -175,7 +207,7 @@ export default function SubscriptionDetailsScreen() {
               <View style={styles.detailTextContainer}>
                 <Text style={[styles.detailTitle, { color: colors.text }]}>Período de Renovação</Text>
                 <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
-                  {subscription.renewal_period.charAt(0).toUpperCase() + subscription.renewal_period.slice(1)}
+                  {subscription.renewal_period.charAt(0).toUpperCase() + subscription.renewal_period.slice(1).toLowerCase()}
                 </Text>
               </View>
             </View>
