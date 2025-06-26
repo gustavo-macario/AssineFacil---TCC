@@ -3,7 +3,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { format, addDays, addWeeks, addMonths, addYears } from 'https://esm.sh/date-fns@2.30.0'
 import { ptBR } from 'https://esm.sh/date-fns@2.30.0/locale'
 
-// Configuração do Supabase
 const supabaseUrl = 'https://rbyhbrvcjexxlhvukkmr.supabase.co'
 const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJieWhicnZjamV4eGxodnVra21yIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NjM3Njg5MywiZXhwIjoyMDYxOTUyODkzfQ.1RU2EQb2phT7g_oZe46bZaapQ2sPoeZRoOPrVgCoUxs'
 const expoAccessToken = '-Y2rhmcBarq5Dbje8zGNgng4-rd44wo7RxV9QdOh'
@@ -21,7 +20,7 @@ interface Subscription {
   user_id: string
   name: string
   amount: number
-  billing_date: string
+  billing_date: string 
   renewal_period: string
   active: boolean
 }
@@ -33,7 +32,6 @@ const getNextBillingDate = (billingDate: Date, renewalPeriod: string): Date => {
   if (billingDate < today) {
     switch (renewalPeriod.toLowerCase()) {
       case 'diario':
-        // Para assinaturas diárias, calcula quantos dias se passaram desde a última cobrança
         const daysDiff = Math.ceil((today.getTime() - billingDate.getTime()) / (1000 * 60 * 60 * 24))
         return addDays(billingDate, daysDiff)
       case 'semanal':
@@ -122,14 +120,15 @@ serve(async (req: Request) => {
       for (const sub of (subscriptions as Subscription[])) {
         console.log('Processando assinatura:', sub.id, sub.name);
         
-        const nextBillingDate = getNextBillingDate(new Date(sub.billing_date), sub.renewal_period);
+        const billingDate = new Date(`${sub.billing_date}T00:00:00`);
+        const nextBillingDate = getNextBillingDate(billingDate, sub.renewal_period);
+
         nextBillingDate.setHours(0, 0, 0, 0);
         
         const daysUntilBilling = Math.ceil((nextBillingDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
         
-        console.log('Dias até a próxima cobrança:', daysUntilBilling);
+        console.log(`Próxima cobrança: ${nextBillingDate.toISOString()}, Dias até lá: ${daysUntilBilling}`);
 
-        // Verificar se há renovação hoje ou nos próximos 3 dias
         if (daysUntilBilling >= 0 && daysUntilBilling <= 3) {
           console.log('Gerando notificação para assinatura:', sub.id);
           
@@ -179,7 +178,7 @@ serve(async (req: Request) => {
       status: 200
     });
   } catch (error: any) {
-    console.error('Erro:', error);
+    console.error('Erro geral no processo:', error);
     return new Response(JSON.stringify({ 
       error: error.message,
       details: error
@@ -188,4 +187,4 @@ serve(async (req: Request) => {
       status: 500
     });
   }
-}); 
+});
