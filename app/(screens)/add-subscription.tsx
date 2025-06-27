@@ -46,9 +46,7 @@ export default function AddSubscriptionScreen() {
   };
 
   const handleAmountChange = (text: string) => {
-    // Remove caracteres não numéricos exceto ponto e vírgula
     let cleanedText = text.replace(/[^\d.,]/g, '');
-    // Limita a 5 dígitos antes da vírgula/ponto
     const parts = cleanedText.split(/[.,]/);
     if (parts[0].length > 5) {
       cleanedText = parts[0].slice(0, 5) + (parts[1] ? cleanedText.slice(parts[0].length) : '');

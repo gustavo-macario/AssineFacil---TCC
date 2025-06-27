@@ -9,18 +9,18 @@ type ColorPickerProps = {
 };
 
 const COLORS = [
-  '#3b82f6', // blue
-  '#8b5cf6', // purple
-  '#14b8a6', // teal
-  '#f59e0b', // amber
-  '#ef4444', // red
-  '#10b981', // green
-  '#f97316', // orange
-  '#6366f1', // indigo
-  '#ec4899', // pink
-  '#84cc16', // lime
-  '#64748b', // slate
-  '#0ea5e9', // sky
+  '#ef4444', // Vermelho 
+  '#f97316', // Laranja 
+  '#eab308', // Amarelo 
+  '#84cc16', // Lima 
+  '#22c55e', // Verde 
+  '#14b8a6', // Turquesa 
+  '#06b6d4', // Ciano 
+  '#3b82f6', // Azul 
+  '#6366f1', // Índigo 
+  '#a855f7', // Roxo 
+  '#ec4899', // Rosa 
+  '#78716c', // Neutro/Pedra 
 ];
 
 export default function ColorPicker({ selectedColor, onSelectColor }: ColorPickerProps) {

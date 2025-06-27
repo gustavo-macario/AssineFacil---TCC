@@ -14,7 +14,6 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
-  // Estados para validação em tempo real
   const [emailError, setEmailError] = useState('');
   const [nameError, setNameError] = useState('');
   const [passwordError, setPasswordError] = useState('');
@@ -24,23 +23,23 @@ export default function Signup() {
   const router = useRouter();
   const { theme, colors } = useTheme();
 
-  // Função para validar email
+  
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email) && email.length <= 100;
   };
 
-  // Função para validar nome
+  
   const validateName = (name: string) => {
     return name.trim().length >= 2 && name.length <= 50;
   };
 
-  // Função para validar senha
+
   const validatePassword = (password: string) => {
     return password.length >= 6 && password.length <= 128;
   };
 
-  // Validação em tempo real do email
+  
   const handleEmailChange = (text: string) => {
     if (text.length <= 100) {
       setEmail(text);
@@ -52,7 +51,7 @@ export default function Signup() {
     }
   };
 
-  // Validação em tempo real do nome
+
   const handleNameChange = (text: string) => {
     if (text.length <= 50) {
       setFullName(text);
@@ -64,7 +63,7 @@ export default function Signup() {
     }
   };
 
-  // Validação em tempo real da senha
+
   const handlePasswordChange = (text: string) => {
     if (text.length <= 128) {
       setPassword(text);
@@ -74,7 +73,6 @@ export default function Signup() {
         setPasswordError('');
       }
       
-      // Validar confirmação de senha quando a senha muda
       if (confirmPassword && text !== confirmPassword) {
         setConfirmPasswordError('As senhas não coincidem');
       } else if (confirmPassword) {
@@ -83,7 +81,6 @@ export default function Signup() {
     }
   };
 
-  // Validação em tempo real da confirmação de senha
   const handleConfirmPasswordChange = (text: string) => {
     if (text.length <= 128) {
       setConfirmPassword(text);
@@ -96,31 +93,26 @@ export default function Signup() {
   };
 
   const handleSignup = async () => {
-    // Validação de campos vazios
     if (!email || !password || !fullName || !confirmPassword) {
       Alert.alert('Erro', 'Por favor, preencha todos os campos');
       return;
     }
 
-    // Validação do nome
     if (!validateName(fullName)) {
       Alert.alert('Erro', 'O nome deve ter entre 2 e 50 caracteres');
       return;
     }
 
-    // Validação do email
     if (!validateEmail(email)) {
       Alert.alert('Erro', 'Por favor, insira um email válido ou máximo de 100 caracteres');
       return;
     }
 
-    // Validação da senha
     if (!validatePassword(password)) {
       Alert.alert('Erro', 'A senha deve ter entre 6 e 128 caracteres');
       return;
     }
 
-    // Validação de confirmação de senha
     if (password !== confirmPassword) {
       Alert.alert('Erro', 'As senhas não coincidem');
       return;

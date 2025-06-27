@@ -36,8 +36,6 @@ export function ExpensesProvider({ children }: { children: React.ReactNode }) {
       case 'yearly':
         return 'anual';
       default:
-        // Se a normalização não encontrar correspondência, retorna o próprio valor normalizado
-        // Isso pode ser útil para identificar períodos não mapeados.
         return norm;
     }
   };
@@ -64,36 +62,36 @@ export function ExpensesProvider({ children }: { children: React.ReactNode }) {
             case 'diario': return total + amount;
             case 'semanal': return total + (amount * 7);
             case 'mensal': return total + (amount * daysInCurrentMonth);
-            case 'trimestral': return total + (amount * (daysInCurrentMonth * 30.4375 / daysInCurrentMonth * 3)); // Aproximação média
+            case 'trimestral': return total + (amount * (daysInCurrentMonth * 30.4375 / daysInCurrentMonth * 3)); 
             case 'anual': return total + (amount * daysInCurrentYear);
-            default: return total + (amount * daysInCurrentMonth); // Default para mensal se freqKey for inválida
+            default: return total + (amount * daysInCurrentMonth); 
           }
         case 'semanal':
           switch (freqKey) {
             case 'diario': return total + (amount / 7);
             case 'semanal': return total + amount;
-            case 'mensal': return total + (amount * (daysInCurrentMonth / 7)); // Sem arredondamento, média real de semanas no mês
-            case 'trimestral': return total + (amount * (daysInCurrentMonth * 3 / 7)); // Média de semanas em 3 meses
+            case 'mensal': return total + (amount * (daysInCurrentMonth / 7)); 
+            case 'trimestral': return total + (amount * (daysInCurrentMonth * 3 / 7)); 
             case 'anual': return total + (amount * weeksInYear);
-            default: return total + (amount * (daysInCurrentMonth / 7)); // Default para mensal
+            default: return total + (amount * (daysInCurrentMonth / 7)); 
           }
         case 'mensal':
           switch (freqKey) {
             case 'diario': return total + (amount / daysInCurrentMonth);
-            case 'semanal': return total + (amount / (daysInCurrentMonth / 7)); // Custo mensal dividido por média de semanas no mês
+            case 'semanal': return total + (amount / (daysInCurrentMonth / 7)); 
             case 'mensal': return total + amount;
             case 'trimestral': return total + (amount * 3);
             case 'anual': return total + (amount * monthsInYear);
-            default: return total + amount; // Default para mensal
+            default: return total + amount; 
           }
         case 'trimestral':
           switch (freqKey) {
-            case 'diario': return total + (amount / (daysInCurrentMonth * 3)); // Aproximação, trimestral tem 3 meses
-            case 'semanal': return total + (amount / (daysInCurrentMonth * 3 / 7)); // Custo trimestral dividido por média de semanas no trimestre
+            case 'diario': return total + (amount / (daysInCurrentMonth * 3)); 
+            case 'semanal': return total + (amount / (daysInCurrentMonth * 3 / 7)); 
             case 'mensal': return total + (amount / 3);
             case 'trimestral': return total + amount;
             case 'anual': return total + (amount * quartersInYear);
-            default: return total + (amount / 3); // Default para mensal
+            default: return total + (amount / 3); 
           }
         case 'anual':
           switch (freqKey) {
@@ -102,7 +100,7 @@ export function ExpensesProvider({ children }: { children: React.ReactNode }) {
             case 'mensal': return total + (amount / monthsInYear);
             case 'trimestral': return total + (amount / quartersInYear);
             case 'anual': return total + amount;
-            default: return total + (amount / monthsInYear); // Default para mensal
+            default: return total + (amount / monthsInYear); 
           }
         default:
           return total + amount;

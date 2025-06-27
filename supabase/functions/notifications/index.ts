@@ -101,7 +101,6 @@ serve(async (req: Request) => {
       for (const sub of (subscriptions as Subscription[])) {
         console.log('Processando assinatura:', sub.id, sub.name);
         
-        // --- CORREÇÃO DE ARQUITETURA: Chamando a função do banco de dados via RPC ---
         const { data: nextBillingDateStr, error: rpcError } = await supabase.rpc('get_next_billing_date', {
           initial_date: sub.billing_date,
           renewal_period_text: sub.renewal_period

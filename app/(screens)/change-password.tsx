@@ -17,17 +17,13 @@ export default function ChangePasswordScreen() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  // Estados para validação em tempo real
   const [newPasswordError, setNewPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
 
-  // Função para validar senha
   const validatePassword = (password: string) => {
     return password.length >= 6 && password.length <= 128;
   };
 
-  // Validação em tempo real da nova senha
   const handleNewPasswordChange = (text: string) => {
     if (text.length <= 128) {
       setNewPassword(text);
@@ -37,7 +33,6 @@ export default function ChangePasswordScreen() {
         setNewPasswordError('');
       }
       
-      // Validar confirmação de senha quando a senha muda
       if (confirmPassword && text !== confirmPassword) {
         setConfirmPasswordError('As senhas não coincidem');
       } else if (confirmPassword) {
@@ -46,7 +41,6 @@ export default function ChangePasswordScreen() {
     }
   };
 
-  // Validação em tempo real da confirmação de senha
   const handleConfirmPasswordChange = (text: string) => {
     if (text.length <= 128) {
       setConfirmPassword(text);
@@ -77,7 +71,6 @@ export default function ChangePasswordScreen() {
     try {
       setIsLoading(true);
 
-      // Primeiro, verifica se a senha atual está correta
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: session?.user.email || '',
         password: currentPassword,
@@ -88,7 +81,6 @@ export default function ChangePasswordScreen() {
         return;
       }
 
-      // Se a senha atual estiver correta, atualiza para a nova senha
       const { error: updateError } = await supabase.auth.updateUser({
         password: newPassword
       });

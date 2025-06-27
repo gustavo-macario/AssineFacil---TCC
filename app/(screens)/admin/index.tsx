@@ -61,9 +61,6 @@ export default function AdminScreen() {
       fetchData();
 
       return () => {
-        // Opcional: lógica de limpeza se necessário quando a tela perde o foco
-        // Por exemplo, cancelar subscriptions, etc.
-        // Neste caso, não parece ser necessário limpar nada especificamente.
       };
     }, [session, router])
   );
@@ -94,7 +91,6 @@ export default function AdminScreen() {
 
       if (settingsError) throw settingsError;
 
-      // Filtra apenas as assinaturas ativas
       const activeSubscriptions = subscriptions.filter(sub => sub.active);
 
       const totalUsers = users.length;
