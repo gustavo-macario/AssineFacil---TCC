@@ -129,7 +129,7 @@ export default function SettingsScreen() {
         notification_enabled: value
       }));
     } catch (error) {
-      console.error('Error updating notification settings:', error);
+      console.error('Erro ao atualizar configurações de notificação:', error);
       setNotificationsEnabled(!value);
       Alert.alert('Erro', 'Não foi possível atualizar as configurações de notificação.');
     }

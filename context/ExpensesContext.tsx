@@ -125,7 +125,7 @@ export function ExpensesProvider({ children }: { children: React.ReactNode }) {
 export function useExpenses() {
   const context = useContext(ExpensesContext);
   if (!context) {
-    throw new Error('useExpenses must be used within an ExpensesProvider');
+    throw new Error('useExpenses deve ser usado dentro de um ExpensesProvider');
   }
   return context;
 }

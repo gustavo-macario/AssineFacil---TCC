@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { ChevronDown } from 'lucide-react-native';
 
@@ -14,28 +14,16 @@ const PAYMENT_METHODS = [
   'PIX',
   'Boleto',
   'PayPal',
-  'Apple Pay / Google Pay',
-  'Outro'
+  'Apple Pay / Google Pay'
 ];
 
 export default function PaymentMethodPicker({ value, onValueChange }: PaymentMethodPickerProps) {
   const { colors } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
-  const [customMethod, setCustomMethod] = useState('');
 
   const handleSelect = (method: string) => {
     onValueChange(method);
-    if (method !== 'Outro') {
-      setModalVisible(false);
-    }
-    setCustomMethod('');
-  };
-
-  const handleCustomMethodSubmit = () => {
-    if (customMethod.trim()) {
-      onValueChange(customMethod.trim());
-      setModalVisible(false);
-    }
+    setModalVisible(false);
   };
 
   return (
@@ -72,53 +60,27 @@ export default function PaymentMethodPicker({ value, onValueChange }: PaymentMet
               </TouchableOpacity>
             </View>
 
-            {value === 'Outro' ? (
-              <View style={styles.customMethodContainer}>
-                <TextInput
-                  style={[styles.customMethodInput, { 
-                    backgroundColor: colors.card,
-                    color: colors.text
-                  }]}
-                  placeholder="Digite o método de pagamento"
-                  placeholderTextColor={colors.textSecondary}
-                  value={customMethod}
-                  onChangeText={setCustomMethod}
-                  maxLength={50}
-                />
+            <View style={styles.optionsContainer}>
+              {PAYMENT_METHODS.map((method) => (
                 <TouchableOpacity
-                  style={[styles.submitButton, { 
-                    backgroundColor: colors.primary,
-                    opacity: customMethod.trim() ? 1 : 0.5
-                  }]}
-                  onPress={handleCustomMethodSubmit}
-                  disabled={!customMethod.trim()}
+                  key={method}
+                  style={[
+                    styles.option,
+                    { backgroundColor: colors.card },
+                    value === method && { backgroundColor: colors.primary + '20' }
+                  ]}
+                  onPress={() => handleSelect(method)}
                 >
-                  <Text style={styles.submitButtonText}>Confirmar</Text>
+                  <Text style={[
+                    styles.optionText,
+                    { color: colors.text },
+                    value === method && { color: colors.primary }
+                  ]}>
+                    {method}
+                  </Text>
                 </TouchableOpacity>
-              </View>
-            ) : (
-              <View style={styles.optionsContainer}>
-                {PAYMENT_METHODS.map((method) => (
-                  <TouchableOpacity
-                    key={method}
-                    style={[
-                      styles.option,
-                      { backgroundColor: colors.card },
-                      value === method && { backgroundColor: colors.primary + '20' }
-                    ]}
-                    onPress={() => handleSelect(method)}
-                  >
-                    <Text style={[
-                      styles.optionText,
-                      { color: colors.text },
-                      value === method && { color: colors.primary }
-                    ]}>
-                      {method}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
+              ))}
+            </View>
           </View>
         </View>
       </Modal>
@@ -177,26 +139,5 @@ const styles = StyleSheet.create({
   optionText: {
     fontFamily: 'Inter-Regular',
     fontSize: 16,
-  },
-  customMethodContainer: {
-    gap: 16,
-  },
-  customMethodInput: {
-    height: 48,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    fontFamily: 'Inter-Regular',
-    fontSize: 16,
-  },
-  submitButton: {
-    height: 48,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  submitButtonText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-    color: 'white',
   },
 }); 

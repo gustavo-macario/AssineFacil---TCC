@@ -72,7 +72,7 @@ export default function RenewalPeriodPicker({ value, onValueChange }: RenewalPer
             onStartShouldSetResponder={() => true}
           >
             <Text style={[styles.modalTitle, { color: colors.text }]}>
-              Select Renewal Period
+              Selecione o Período de Renovação
             </Text>
             
             <FlatList
@@ -87,7 +87,7 @@ export default function RenewalPeriodPicker({ value, onValueChange }: RenewalPer
               onPress={() => setModalVisible(false)}
             >
               <Text style={[styles.cancelButtonText, { color: colors.text }]}>
-                Cancel
+                Cancelar
               </Text>
             </TouchableOpacity>
           </View>

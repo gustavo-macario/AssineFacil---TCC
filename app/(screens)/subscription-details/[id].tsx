@@ -163,7 +163,7 @@ export default function SubscriptionDetailsScreen() {
                 <Calendar size={20} color={colors.primary} />
               </View>
               <View style={styles.detailTextContainer}>
-                <Text style={[styles.detailTitle, { color: colors.text }]}>Data de Início da Assinatura</Text>
+                <Text style={[styles.detailTitle, { color: colors.text }]}>Data da Primeira Cobrança</Text>
                 <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
                   {format(new Date(subscription.billing_date + 'T00:00:00'), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
                 </Text>

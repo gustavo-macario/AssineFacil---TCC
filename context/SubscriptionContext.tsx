@@ -4,19 +4,22 @@ import { supabase } from '@/lib/supabase';
 import { Subscription } from '@/types';
 
 const DEFAULT_CATEGORIES = [
-  'Entretenimento',
-  'Streaming',
-  'Música',
+  'Streaming de Vídeo',
+  'Streaming de Música',
   'Jogos',
   'Produtividade',
   'Utilitários',
-  'Compras',
-  'Alimentação',
+  'Transporte',
+  'Delivery e Alimentação',
   'Saúde e Bem-Estar',
   'Finanças',
   'Educação',
+  'Leitura e Notícias',
+  'Armazenamento em Nuvem',
+  'Negócios e Ferramentas Profissionais',
   'Outro',
 ];
+
 
 interface SubscriptionContextType {
   subscriptions: Subscription[];

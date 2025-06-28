@@ -28,7 +28,6 @@ export default function AddSubscriptionScreen() {
   const [category, setCategory] = useState('');
   const [color, setColor] = useState('#3b82f6');
   const [paymentMethod, setPaymentMethod] = useState('');
-  const [customPaymentMethod, setCustomPaymentMethod] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -41,7 +40,6 @@ export default function AddSubscriptionScreen() {
     setCategory('');
     setColor('#3b82f6');
     setPaymentMethod('');
-    setCustomPaymentMethod('');
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
   };
 
@@ -97,7 +95,7 @@ export default function AddSubscriptionScreen() {
         renewal_period: renewalPeriod,
         category,
         color,
-        payment_method: paymentMethod === 'other' ? customPaymentMethod : paymentMethod,
+        payment_method: paymentMethod,
         active: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
