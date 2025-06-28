@@ -56,8 +56,6 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
       'BRL': 'R$',
       'USD': '$',
       'EUR': '€',
-      
-      
       'CAD': 'C$',
       'AUD': 'A$',
       'CHF': 'Fr'

@@ -40,6 +40,5 @@ export type UserProfile = {
   email: string;
   full_name?: string;
   role: 'user' | 'admin';
-  updated_at: string;
   created_at: string;
 };

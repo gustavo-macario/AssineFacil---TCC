@@ -75,7 +75,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         setTheme(data.theme as ThemeType);
       }
     } catch (error) {
-      console.error('Error loading theme preference:', error);
+      console.error('Erro ao carregar preferência de tema:', error);
     }
   };
 
@@ -87,7 +87,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           .update({ theme: newTheme })
           .eq('id', session.user.id);
       } catch (error) {
-        console.error('Error saving theme preference:', error);
+        console.error('Erro ao salvar preferência de tema:', error);
       }
     }
   };
@@ -108,7 +108,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
+    throw new Error('useTheme deve ser usado dentro de um ThemeProvider');
   }
   return context;
 }

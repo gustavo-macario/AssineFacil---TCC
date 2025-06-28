@@ -28,7 +28,6 @@ export default function HomeScreen() {
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      // Os dados são carregados automaticamente pelos contextos
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
     } finally {
@@ -77,29 +76,26 @@ export default function HomeScreen() {
     );
   }
 
-  // Componente para renderizar uma assinatura com cálculo de data
   const SubscriptionWithDate = ({ subscription }: { subscription: Subscription }) => {
     const { nextBillingDate, isLoading: isCalculatingDate } = useNextBillingDate(subscription);
     
     if (isCalculatingDate) {
-      return null; // Não renderiza enquanto está calculando
+      return null; 
     }
     
     if (!nextBillingDate) {
-      return null; // Não renderiza se não conseguiu calcular a data
+      return null; 
     }
     
     const today = new Date();
     const nextMonth = addMonths(today, 1);
     
-    // Para assinaturas diárias, mostra as próximas 30 cobranças
     if (subscription.renewal_period.toLowerCase() === 'diario') {
       const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
       if (nextBillingDate > thirtyDaysFromNow) {
         return null;
       }
     } else {
-      // Para outras assinaturas, mostra as cobranças do próximo mês
       if (nextBillingDate > nextMonth) {
         return null;
       }

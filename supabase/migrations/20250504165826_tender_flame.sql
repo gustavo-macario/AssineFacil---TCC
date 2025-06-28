@@ -1,17 +1,4 @@
-/*
-  # Create initial tables for Subscription Management App
-  
-  1. New Tables
-    - `profiles` - User profiles table with basic info
-    - `subscriptions` - Subscription details for each user
-    - `notifications` - Notification settings and history
-  
-  2. Security
-    - Enable RLS on all tables
-    - Add policies for authenticated users to access their own data
-*/
 
--- Create profiles table
 CREATE TABLE IF NOT EXISTS profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT NOT NULL,
@@ -52,7 +39,7 @@ CREATE POLICY "Admins can update all profiles"
     (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin'
   );
 
--- Create subscriptions table
+
 CREATE TABLE IF NOT EXISTS subscriptions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
@@ -60,7 +47,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   description TEXT,
   amount DECIMAL(10, 2) NOT NULL,
   billing_date DATE NOT NULL,
-  renewal_period TEXT NOT NULL, -- 'weekly', 'monthly', 'quarterly', 'yearly'
+  renewal_period TEXT NOT NULL, 
   category TEXT,
   color TEXT,
   logo_url TEXT,
@@ -129,8 +116,7 @@ CREATE POLICY "Users can delete their own notifications"
 CREATE TABLE IF NOT EXISTS user_settings (
   id UUID PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
   notification_enabled BOOLEAN DEFAULT true,
-  reminder_days INTEGER DEFAULT 3, -- Days before billing date to send reminder
-  theme TEXT DEFAULT 'light',
+  reminder_days INTEGER DEFAULT 3, 
   currency TEXT DEFAULT 'BRL',
   backup_enabled BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT now(),

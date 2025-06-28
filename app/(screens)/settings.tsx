@@ -83,13 +83,10 @@ export default function SettingsScreen() {
               
               if (signOutError) {
                 console.error('[LOGOUT] Erro ao fazer logout do Supabase:', signOutError);
-                // Mesmo com erro, continua com o processo de logout
               }
 
-              // Força a limpeza do estado de autenticação
               await signOut();
 
-              // Redireciona para a tela de login
               console.log('[LOGOUT] Redirecionando para login...');
               router.replace({
                 pathname: '/(auth)/login',
@@ -98,7 +95,6 @@ export default function SettingsScreen() {
 
             } catch (error) {
               console.error('[LOGOUT ERRO]', error);
-              // Em caso de erro, força o redirecionamento para login
               router.replace('/(auth)/login');
             } finally {
               setIsLoading(false);
