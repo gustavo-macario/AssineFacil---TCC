@@ -1,5 +1,5 @@
 // Tela de recuperação de senha - Temporariamente desabilitada
-// Para reativar, descomente o código abaixo e configure o Supabase corretamente
+
 
 /*
 import React, { useState } from 'react';

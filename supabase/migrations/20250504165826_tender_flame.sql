@@ -137,7 +137,7 @@ CREATE POLICY "Users can update their own settings"
   FOR UPDATE
   USING (auth.uid() = id);
 
--- Create function to create a profile and settings when a new user signs up
+-- Cria função para criar um perfil e configurações quando um novo usuário se cadastra
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -151,7 +151,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create trigger that calls function on user signup
+-- Cria trigger que chama a função ao cadastrar um novo usuário
 CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
