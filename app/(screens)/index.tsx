@@ -6,67 +6,69 @@ import { useAuth } from '@/context/AuthContext';
 import { useSubscriptions } from '@/context/SubscriptionContext';
 import { useExpenses } from '@/context/ExpensesContext';
 import { useCurrency } from '@/context/CurrencyContext';
-import { format, isWithinInterval, startOfMonth, endOfMonth, isSameMonth, getDaysInMonth, isLeapYear, addMonths, addWeeks, addYears } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { addDays, isWithinInterval } from 'date-fns';
 import { CreditCard, TrendingUp, Calendar, Plus } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import SubscriptionCard from '@/components/SubscriptionCard';
 import { Subscription } from '@/types';
 import { useNextBillingDate } from '@/hooks/useNextBillingDate';
 
+type SubscriptionWithBillingDate = Subscription & { nextBillingDate: Date };
+
+function SubscriptionLoader({ subscription, onDateCalculated }: { subscription: Subscription, onDateCalculated: (subWithDate: SubscriptionWithBillingDate) => void }) {
+  const { nextBillingDate, isLoading } = useNextBillingDate(subscription);
+
+  useEffect(() => {
+    if (!isLoading && nextBillingDate) {
+      onDateCalculated({ ...subscription, nextBillingDate });
+    }
+  }, [isLoading, nextBillingDate, subscription]);
+
+  return null;
+}
+
 export default function HomeScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
-  const { subscriptions } = useSubscriptions();
+  const { subscriptions, refreshSubscriptions } = useSubscriptions();
   const { monthlyCost, yearlyCost } = useExpenses();
   const { currencySymbol } = useCurrency();
   const router = useRouter();
-  
+
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-
-  const fetchData = async () => {
-    try {
-      setIsLoading(true);
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const normalizePeriod = (period: string) => {
-    if (!period) return '';
-    const norm = period.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-    switch (norm) {
-      case 'diario':
-      case 'daily':
-        return 'diario';
-      case 'semanal':
-      case 'weekly':
-        return 'semanal';
-      case 'mensal':
-      case 'monthly':
-        return 'mensal';
-      case 'trimestral':
-      case 'quarterly':
-        return 'trimestral';
-      case 'anual':
-      case 'yearly':
-        return 'anual';
-      default:
-        return norm;
-    }
-  };
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchData();
-  };
+  const [upcomingSubscriptions, setUpcomingSubscriptions] = useState<SubscriptionWithBillingDate[]>([]);
 
   useEffect(() => {
-    fetchData();
-  }, [session, subscriptions]);
+    setUpcomingSubscriptions([]);
+  }, [subscriptions]);
+
+  const handleDateCalculated = (subWithDate: SubscriptionWithBillingDate) => {
+    setUpcomingSubscriptions(prevSubs => {
+      if (prevSubs.find(s => s.id === subWithDate.id)) {
+        return prevSubs;
+      }
+      return [...prevSubs, subWithDate];
+    });
+  };
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    await refreshSubscriptions();
+    setRefreshing(false);
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1000);
+    return () => clearTimeout(timer);
+  }, [subscriptions]);
+
+  const today = new Date();
+  const sevenDaysFromNow = addDays(today, 7);
+
+  const finalSubscriptions = upcomingSubscriptions
+    .filter(sub => isWithinInterval(sub.nextBillingDate, { start: today, end: sevenDaysFromNow }))
+    .sort((a, b) => a.nextBillingDate.getTime() - b.nextBillingDate.getTime());
 
   if (isLoading) {
     return (
@@ -76,54 +78,22 @@ export default function HomeScreen() {
     );
   }
 
-  const SubscriptionWithDate = ({ subscription }: { subscription: Subscription }) => {
-    const { nextBillingDate, isLoading: isCalculatingDate } = useNextBillingDate(subscription);
-    
-    if (isCalculatingDate) {
-      return null; 
-    }
-    
-    if (!nextBillingDate) {
-      return null; 
-    }
-    
-    const today = new Date();
-    const nextMonth = addMonths(today, 1);
-    
-    if (subscription.renewal_period.toLowerCase() === 'diario') {
-      const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
-      if (nextBillingDate > thirtyDaysFromNow) {
-        return null;
-      }
-    } else {
-      if (nextBillingDate > nextMonth) {
-        return null;
-      }
-    }
-    
-    return (
-      <SubscriptionCard
-        subscription={subscription}
-        onPress={() => router.push({
-          pathname: '/(screens)/subscription-details/[id]',
-          params: { id: subscription.id }
-        })}
-        currencySymbol={currencySymbol}
-      />
-    );
-  };
-
-  const nextMonthSubs = subscriptions.filter(sub => sub.active);
-
   return (
-    <ScrollView 
+    <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.contentContainer}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />
       }
     >
-      {/* Header Section */}
+      {subscriptions.filter(s => s.active).map(sub => (
+        <SubscriptionLoader
+          key={sub.id}
+          subscription={sub}
+          onDateCalculated={handleDateCalculated}
+        />
+      ))}
+
       <View style={styles.header}>
         <Text style={[styles.greeting, { color: colors.text }]}>
           Olá, {session?.user?.user_metadata?.full_name || 'Usuário'}
@@ -133,7 +103,6 @@ export default function HomeScreen() {
         </Text>
       </View>
 
-      {/* Cost Summary */}
       <LinearGradient
         colors={['#3b82f6', '#8b5cf6']}
         start={{ x: 0, y: 0 }}
@@ -151,25 +120,24 @@ export default function HomeScreen() {
         </View>
       </LinearGradient>
 
-      {/* Quick Actions */}
       <View style={styles.quickActionsContainer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.quickAction, { backgroundColor: colors.card }]}
           onPress={() => router.push('/(screens)/add-subscription')}
         >
           <Plus size={24} color={colors.primary} />
           <Text style={[styles.quickActionText, { color: colors.text }]}>Adicionar</Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={[styles.quickAction, { backgroundColor: colors.card }]}
           onPress={() => router.push('/(screens)/subscriptions')}
         >
           <CreditCard size={24} color="#8b5cf6" />
           <Text style={[styles.quickActionText, { color: colors.text }]}>Ver Todas</Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={[styles.quickAction, { backgroundColor: colors.card }]}
           onPress={() => router.push('/(screens)/analytics')}
         >
@@ -178,22 +146,29 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Próximos 30 Dias */}
       <View style={styles.sectionContainer}>
         <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Próximos 30 Dias</Text>
-          <CreditCard size={20} color={colors.primary} />
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Próximos 7 Dias</Text>
+          <Calendar size={20} color={colors.primary} />
         </View>
         
-        {nextMonthSubs.length > 0 ? (
-          nextMonthSubs.map(subscription => (
-            <SubscriptionWithDate key={subscription.id} subscription={subscription} />
+        {finalSubscriptions.length > 0 ? (
+          finalSubscriptions.map(subscription => (
+            <SubscriptionCard
+              key={subscription.id}
+              subscription={subscription}
+              onPress={() => router.push({
+                pathname: '/(screens)/subscription-details/[id]',
+                params: { id: subscription.id }
+              })}
+              currencySymbol={currencySymbol}
+            />
           ))
         ) : (
-          <View style={styles.emptyContainer}>
+          <View style={[styles.emptyContainer, { backgroundColor: colors.card, padding: 20, borderRadius: 12 }]}>
             <Calendar size={48} color={colors.textTertiary} />
-            <Text style={[styles.emptyText, { color: colors.textTertiary }]}>
-              Nenhuma cobrança nos próximos 30 dias
+            <Text style={[styles.emptyText, { color: colors.textSecondary, marginTop: 8 }]}>
+              Nenhuma cobrança nos próximos 7 dias
             </Text>
           </View>
         )}
