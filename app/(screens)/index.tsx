@@ -22,7 +22,7 @@ function SubscriptionLoader({ subscription, onDateCalculated }: { subscription: 
     if (!isLoading && nextBillingDate) {
       onDateCalculated({ ...subscription, nextBillingDate });
     }
-  }, [isLoading, nextBillingDate, subscription]);
+  }, [isLoading, nextBillingDate, subscription, onDateCalculated]);
 
   return null;
 }
@@ -39,38 +39,43 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [upcomingSubscriptions, setUpcomingSubscriptions] = useState<SubscriptionWithBillingDate[]>([]);
 
-  useEffect(() => {
-    setUpcomingSubscriptions([]);
-  }, [subscriptions]);
-
-  const handleDateCalculated = (subWithDate: SubscriptionWithBillingDate) => {
+  const handleDateCalculated = React.useCallback((subWithDate: SubscriptionWithBillingDate) => {
     setUpcomingSubscriptions(prevSubs => {
-      if (prevSubs.find(s => s.id === subWithDate.id)) {
-        return prevSubs;
+      const existingIndex = prevSubs.findIndex(s => s.id === subWithDate.id);
+      if (existingIndex !== -1) {
+        const newSubs = [...prevSubs];
+        newSubs[existingIndex] = subWithDate;
+        return newSubs;
+      } else {
+        return [...prevSubs, subWithDate];
       }
-      return [...prevSubs, subWithDate];
     });
-  };
+  }, []);
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
+    setUpcomingSubscriptions([]);
     await refreshSubscriptions();
     setRefreshing(false);
-  }, []);
+  }, [refreshSubscriptions]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1000);
+    const timer = setTimeout(() => setIsLoading(false), 1500);
     return () => clearTimeout(timer);
-  }, [subscriptions]);
+  }, []);
 
   const today = new Date();
   const sevenDaysFromNow = addDays(today, 7);
+  const activeSubscriptions = subscriptions.filter(s => s.active);
 
   const finalSubscriptions = upcomingSubscriptions
-    .filter(sub => isWithinInterval(sub.nextBillingDate, { start: today, end: sevenDaysFromNow }))
+    .filter(sub =>
+      activeSubscriptions.some(activeSub => activeSub.id === sub.id) &&
+      isWithinInterval(sub.nextBillingDate, { start: today, end: sevenDaysFromNow })
+    )
     .sort((a, b) => a.nextBillingDate.getTime() - b.nextBillingDate.getTime());
 
-  if (isLoading) {
+  if (isLoading && !refreshing) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -86,7 +91,7 @@ export default function HomeScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />
       }
     >
-      {subscriptions.filter(s => s.active).map(sub => (
+      {activeSubscriptions.map(sub => (
         <SubscriptionLoader
           key={sub.id}
           subscription={sub}
